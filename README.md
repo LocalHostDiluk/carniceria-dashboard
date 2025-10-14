@@ -1,27 +1,67 @@
-IMPORTANTEE
+# Estado del Proyecto
 
-FUNCIONES:
-LOGIN FUNCIONAL ✅
-DASHBOARD - PANTALLA PRINCIPAL ✅
-PANTALLA DE INVENTARIO ✅
-PANTALLA DE VENTAS ✅
+> ⚠ **Importante:** Este README funciona como guía de progreso y prioridades para el desarrollo. Mantener este documento actualizado conforme se vayan completando módulos o se detecten nuevas necesidades.
 
-RESTANTE:
-    PANTALLA DE CIERRE DE CAJA
-    FUNCIONALIDADES DE CIERRE DE CAJA
-    SEGURIDAD EN LA PANTALLA DE CIERRE DE CAJA
-    ADMINISTRACION DEL USUARIO (CAMBIO DE CONTRASEÑA, ETC)
 
-POR TERMINAR:
-PANTALLA DE INVENTARIO:
-    👉 AGREGAR PRODUCTOS (TAMBIEN POR LOTES)
-    👉 ACTUALIZAR PRODUCTOS (TAMBIEN LA OPCION PARA PONERLO COMO DESTACADO O NO)
-    👉 ACTIVAR DESACTIVAR PRODUCTOS (ACTIVE: TRUE/FALSE)
-    👉 ELIMINAR PRODUCTOS
-    👉 SI SE REQUIERE, OPTIMIZAR EL DISEÑO (PAGINACION A TABLA O REORGANIZACION DEL DISEÑO)
+## ✅ Funcionalidades Completadas
 
-PANTALLA DE VENTAS
-    👉 CONFIRMAR LA VENTA Y GUARDARLA EN LA BD
-    👉 COMPRBAR FUNCIONALIDAD
-    👉 VER POSIBLES ERRORES
-    👉 VER POSIBLES MEJORAS
+- **Login funcional**
+- **Dashboard - Pantalla principal**
+- **Pantalla de Inventario (vista base)**
+- **Pantalla de Ventas (vista base)**
+
+---
+
+## 🚧 Funcionalidades Pendientes
+
+### 🟠 Pantalla de Cierre de Caja
+
+- Diseño e implementación de la vista
+- Lógica de cierre de caja (cálculos, resumen y confirmación)
+- Registro de historial de cierres
+- Validaciones y bloqueo según permisos de usuario
+
+### 🛡️ Seguridad
+
+- Restricción de acceso a pantalla de cierre de caja por rol/permiso
+- Validaciones de acciones críticas (ej. confirmación de cierre)
+
+### 👤 Administración de Usuario
+
+- Cambio de contraseña
+- Configuración de perfil básico (si aplica)
+- Control de sesión y seguridad adicional
+
+---
+
+## 📍 Detalles por Módulo
+
+### 📦 Pantalla de Inventario
+
+**Faltante:**
+
+- ➕ Agregar productos (individual y carga por lotes)
+- ✏️ Actualizar productos (con opción de marcar como destacado)
+- 🔁 Activar / desactivar productos (`active: true/false`)
+- 🗑️ Eliminar productos
+- 🎨 Posible mejora del diseño (paginación, tabla optimizada o reordenamiento visual)
+
+### 🛒 Pantalla de Ventas
+
+**Faltante:**
+
+- 💾 Confirmar venta y guardarla correctamente en la base de datos
+- ✅ Probar flujo completo de venta
+- 🔍 Detectar y corregir posibles errores
+- 🚀 Evaluar mejoras en la experiencia de uso
+
+---
+
+## 🎯 Objetivo General de Siguientes Entregables
+
+- Finalizar inventario para tener CRUD completo y funcional
+- Implementar flujo de venta totalmente operativo y registrado en BD
+- Desarrollar cierre de caja con seguridad y control de usuario
+- Añadir administración de usuario para control interno del sistema
+
+---
