@@ -13,11 +13,25 @@ import {
 import { KpiCardSkeleton } from "@/components/dashboard/KpiCardSkeleton";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { ChartSkeleton } from "@/components/dashboard/ChartSkeleton";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 export default function HomePage() {
+  const { isAuthenticated, isLoading } = useAuthGuard();
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [salesData, setSalesData] = useState<DailySale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div>Cargando...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   useEffect(() => {
     // Renombramos la función y usamos Promise.all para cargar ambos datos a la vez.
@@ -124,11 +138,7 @@ export default function HomePage() {
       </div>
 
       <div className="grid gap-4 md:gap-8 lg:grid-cols-1 mt-8">
-        {isLoading ? (
-          <ChartSkeleton />
-        ) : (
-          <SalesChart data={salesData} />
-        )}
+        {isLoading ? <ChartSkeleton /> : <SalesChart data={salesData} />}
       </div>
     </DashboardLayout>
   );

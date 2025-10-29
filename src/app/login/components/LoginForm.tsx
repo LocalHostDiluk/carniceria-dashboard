@@ -19,16 +19,17 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
-  const { login, user } = useUser();
+  const { login, user, profile } = useUser();
   const router = useRouter();
 
-  // Redirigir cuando el usuario se autentique
+  // Redirigir cuando el usuario se autentique correctamente
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && profile && loginSuccess) {
       router.push("/");
     }
-  }, [user, router, isLoading]);
+  }, [user, profile, loginSuccess, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,14 +44,9 @@ export function LoginForm() {
     try {
       await login(email, password);
       toast.success("¡Bienvenido!");
-
-      // Dar tiempo para que el contexto se actualice
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
+      setLoginSuccess(true);
     } catch (error) {
       toast.error("Credenciales incorrectas");
-      console.error("Login error:", error);
       setIsLoading(false);
     }
   };
@@ -94,11 +90,6 @@ export function LoginForm() {
               {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
             </Button>
           </form>
-
-          {/* Ayuda para testing */}
-          <div className="mt-4 text-xs text-muted-foreground text-center">
-            <p>Usuario de prueba: empleado@carniceria.com / empleado123</p>
-          </div>
         </CardContent>
       </Card>
     </div>
