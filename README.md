@@ -47,21 +47,9 @@
 - 🗑️ Eliminar productos
 - 🎨 Posible mejora del diseño (paginación, tabla optimizada o reordenamiento visual)
 
-### 🛒 Pantalla de Ventas
-
-**Faltante:**
-
-- 💾 Confirmar venta y guardarla correctamente en la base de datos
-- ✅ Probar flujo completo de venta
-- 🔍 Detectar y corregir posibles errores
-- 🚀 Evaluar mejoras en la experiencia de uso
-
----
-
 ## 🎯 Objetivo General de Siguientes Entregables
 
 - Finalizar inventario para tener CRUD completo y funcional
-- Implementar flujo de venta totalmente operativo y registrado en BD
 - Desarrollar cierre de caja con seguridad y control de usuario
 - Añadir administración de usuario para control interno del sistema
 
