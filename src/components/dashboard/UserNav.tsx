@@ -10,23 +10,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabaseClient";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useUser } from "@/hooks/useUser"; // <-- Importar nuestro hook
+import { useUser } from "@/hooks/useUser";
 
 export const UserNav = () => {
-  const router = useRouter();
-  const { profile } = useUser();
+  const { profile, logout } = useUser();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast.error("Error al cerrar sesión", { description: error.message });
-    } else {
-      toast.success("Has cerrado sesión exitosamente.");
-      router.push("/login");
+    try {
+      await logout();
+      toast.success("Sesión cerrada correctamente");
+    } catch (error) {
+      toast.error("Error al cerrar sesión");
+      console.error("Error al cerrar sesión:", error);
     }
   };
 

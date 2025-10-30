@@ -16,29 +16,15 @@ import { ChartSkeleton } from "@/components/dashboard/ChartSkeleton";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading } = useAuthGuard();
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [salesData, setSalesData] = useState<DailySale[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div>Cargando...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return null;
-  }
-
   useEffect(() => {
-    // Renombramos la función y usamos Promise.all para cargar ambos datos a la vez.
     const loadDashboardData = async () => {
       try {
         setIsLoading(true);
-        // Pedimos ambos datos en paralelo para mayor eficiencia
         const [kpisData, dailySalesData] = await Promise.all([
           fetchDashboardKpis(),
           fetchDailySales(),
@@ -51,10 +37,22 @@ export default function HomePage() {
         setIsLoading(false);
       }
     };
-    loadDashboardData();
-  }, []);
 
-  // Formateador para moneda
+    // Solo cargar datos SI está autenticado
+    if (isAuthenticated) {
+      loadDashboardData();
+    }
+  }, [isAuthenticated]); // Depende de isAuthenticated
+
+  if (authLoading) {
+    return <div className="p-4">Verificando sesión...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null; // Se está redirigiendo
+  }
+
+  // ✅ Formatters (pueden ir donde quieras)
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",

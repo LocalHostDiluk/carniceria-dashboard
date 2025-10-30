@@ -16,7 +16,12 @@ import {
   type ProductWithCategory,
 } from "@/services/productService";
 import { type CartItem, TicketItem } from "./components/TicketItem";
-import { WeightInputDialog } from "./components/WeightInputDialog";
+import { UnifiedQuantityModal } from "@/components/sales/UnifiedQuantityModal";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { toast } from "sonner";
+import { salesService, type SaleProcessRequest } from "@/services/salesService";
+import { SaleConfirmationModal } from "@/components/sales/SaleConfirmationModal";
+import { useUser } from "@/hooks/useUser";
 
 // Un componente simple para la tarjeta de producto en el POS
 const PosProductCard = ({
@@ -38,6 +43,8 @@ const PosProductCard = ({
 );
 
 export default function SalesPage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
+  const { user } = useUser();
   const [products, setProducts] = useState<ProductWithCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,6 +52,14 @@ export default function SalesPage() {
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] =
     useState<ProductWithCategory | null>(null);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [isProcessingSale, setIsProcessingSale] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      console.log("🔍 Tu User ID es:", user.id);
+    }
+  }, [user]);
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -57,8 +72,23 @@ export default function SalesPage() {
         setIsLoading(false);
       }
     };
-    loadProducts();
-  }, []);
+
+    if (isAuthenticated) {
+      loadProducts();
+    }
+  }, [isAuthenticated]);
+
+  const total = useMemo(() => {
+    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  }, [cart]);
+
+  if (authLoading) {
+    return <div className="p-4">Verificando sesión...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   // ✅ CORRECCIÓN: La función ahora espera un objeto 'CartItem'
   const handleAddToCart = (itemToAdd: CartItem) => {
@@ -81,21 +111,10 @@ export default function SalesPage() {
 
   // Maneja la selección de un producto
   const handleProductSelect = (product: ProductWithCategory) => {
-    if (product.unit_of_measure === "kg") {
-      setSelectedProduct(product);
-      setIsWeightModalOpen(true);
-    } else {
-      // ✅ CORRECCIÓN: Pasamos un objeto 'CartItem' bien formado
-      handleAddToCart({
-        product_id: product.product_id,
-        name: product.name,
-        price: product.sale_price,
-        quantity: 1,
-      });
-    }
+    setSelectedProduct(product);
+    setIsWeightModalOpen(true);
   };
 
-  // ✅ CORRECCIÓN: Se eliminó el 'return cart' innecesario
   const handleUpdateQuantity = (productId: string, newQuantity: number) => {
     setCart((currentCart) => {
       if (newQuantity <= 0) {
@@ -115,27 +134,80 @@ export default function SalesPage() {
     );
   };
 
-  const total = useMemo(() => {
-    return cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  }, [cart]);
+  const handleFinalizeSale = () => {
+    if (cart.length === 0) {
+      toast.error("No hay productos en el carrito");
+      return;
+    }
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmSale = async (
+    paymentMethod: "efectivo" | "tarjeta" | "transferencia"
+  ) => {
+    try {
+      setIsProcessingSale(true);
+
+      const saleRequest: SaleProcessRequest = {
+        items: cart,
+        paymentMethod,
+        total,
+      };
+
+      const result = await salesService.processSale(saleRequest);
+
+      if (result.success) {
+        // Éxito: limpiar carrito y mostrar mensaje
+        setCart([]);
+        setIsConfirmModalOpen(false);
+        toast.success(result.message || "¡Venta procesada exitosamente!");
+
+        // Opcional: mostrar ID de venta
+        if (result.saleId) {
+          console.log("Venta ID:", result.saleId);
+        }
+      } else {
+        // Error en la validación o procesamiento
+        toast.error(result.message);
+
+        // Mostrar errores específicos si los hay
+        if (result.errors) {
+          result.errors.forEach((error) => {
+            toast.error(error);
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Error processing sale:", error);
+      toast.error("Error inesperado al procesar la venta");
+    } finally {
+      setIsProcessingSale(false);
+    }
+  };
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+    }).format(amount);
+  };
+
   return (
     <DashboardLayout>
-      <WeightInputDialog
+      <UnifiedQuantityModal
         isOpen={isWeightModalOpen}
         onClose={() => setIsWeightModalOpen(false)}
         product={selectedProduct}
-        onConfirm={(productId, name, price, weight) => {
-          // ✅ CORRECCIÓN: Pasamos un objeto 'CartItem' bien formado
+        onConfirm={(productId, name, price, quantity) => {
           handleAddToCart({
             product_id: productId,
             name: name,
             price: price,
-            quantity: weight,
+            quantity: quantity,
           });
         }}
       />
@@ -199,13 +271,27 @@ export default function SalesPage() {
                 <span>Total</span>
                 <span>${total.toFixed(2)}</span>
               </div>
-              <Button className="w-full" size="lg" disabled={cart.length === 0}>
-                Finalizar Venta
+              <Button
+                className="w-full"
+                size="lg"
+                disabled={cart.length === 0 || isProcessingSale}
+                onClick={handleFinalizeSale}
+              >
+                {isProcessingSale
+                  ? "Procesando..."
+                  : `Finalizar Venta - ${formatCurrency(total)}`}
               </Button>
             </CardFooter>
           </Card>
         </div>
       </div>
+      <SaleConfirmationModal
+        isOpen={isConfirmModalOpen}
+        onClose={() => setIsConfirmModalOpen(false)}
+        cartItems={cart}
+        total={total}
+        onConfirmSale={handleConfirmSale}
+      />
     </DashboardLayout>
   );
 }

@@ -1,46 +1,160 @@
-// src/services/salesService.ts
 import { supabase } from "@/lib/supabaseClient";
 import type { CartItem } from "@/app/sales/components/TicketItem";
 
-// Este tipo debe coincidir con el tipo 'cart_item' que creamos en SQL
-type CartItemForDb = {
-  product_id: string;
-  quantity: number;
-  price_at_sale: number;
-};
+export interface SaleProcessRequest {
+  items: CartItem[];
+  paymentMethod: "efectivo" | "tarjeta" | "transferencia";
+  total: number;
+}
 
-export const processSale = async (
-  userId: string,
-  paymentMethod: "efectivo" | "tarjeta",
-  totalAmount: number,
-  cart: CartItem[]
-) => {
-  // 1. Transformamos el carrito del frontend al formato que la función DB espera
-  const cartItemsForDb: CartItemForDb[] = cart.map((item) => ({
-    product_id: item.product_id,
-    quantity: item.quantity,
-    price_at_sale: item.price,
-  }));
+export interface SaleProcessResult {
+  success: boolean;
+  saleId?: string;
+  message: string;
+  errors?: string[];
+}
 
-  // 2. Llamamos a la función 'create_sale' en Supabase
-  const { data, error } = await supabase.rpc("create_sale", {
-    p_user_id: userId,
-    p_payment_method: paymentMethod,
-    p_total_amount: totalAmount,
-    p_cart_items: cartItemsForDb,
-  });
+export interface SaleValidationError {
+  productId: string;
+  productName: string;
+  error: string;
+  availableStock?: number;
+}
 
-  if (error) {
-    console.error("Error processing sale:", error);
-    // Personalizamos el mensaje de error para el usuario
-    if (error.message.includes("Stock insuficiente")) {
-      throw new Error(
-        "No hay suficiente stock para completar la venta. Revisa el inventario."
-      );
+class SalesService {
+  // Procesar una venta completa
+  async processSale(request: SaleProcessRequest): Promise<SaleProcessResult> {
+    try {
+      // 1. Validar stock disponible para todos los productos
+      const validationResult = await this.validateStock(request.items);
+      if (!validationResult.isValid) {
+        return {
+          success: false,
+          message: "Error de validación de stock",
+          errors: validationResult.errors.map(
+            (e) => `${e.productName}: ${e.error}`
+          ),
+        };
+      }
+
+      // 2. Procesar la venta en una transacción
+      const result = await this.executeSaleTransaction(request);
+
+      return result;
+    } catch (error) {
+      console.error("Error processing sale:", error);
+      return {
+        success: false,
+        message: "Error inesperado al procesar la venta",
+      };
     }
-    throw new Error("Ocurrió un error al procesar la venta.");
   }
 
-  // Si todo va bien, devolvemos el ID de la nueva venta
-  return data;
-};
+  // Validar que hay stock suficiente para todos los productos
+  private async validateStock(items: CartItem[]): Promise<{
+    isValid: boolean;
+    errors: SaleValidationError[];
+  }> {
+    const errors: SaleValidationError[] = [];
+
+    for (const item of items) {
+      // Obtener stock disponible del producto
+      const { data: lots, error } = await supabase
+        .from("inventory_lots")
+        .select("stock_quantity, expiration_date")
+        .eq("product_id", item.product_id)
+        .gt("stock_quantity", 0)
+        .order("expiration_date", { ascending: true });
+
+      if (error) {
+        errors.push({
+          productId: item.product_id,
+          productName: item.name,
+          error: "Error al verificar stock",
+        });
+        continue;
+      }
+
+      const totalAvailableStock =
+        lots?.reduce((sum, lot) => sum + lot.stock_quantity, 0) || 0;
+
+      if (totalAvailableStock < item.quantity) {
+        errors.push({
+          productId: item.product_id,
+          productName: item.name,
+          error: `Stock insuficiente. Disponible: ${totalAvailableStock}`,
+          availableStock: totalAvailableStock,
+        });
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  }
+
+  // Ejecutar la transacción de venta
+  private async executeSaleTransaction(
+    request: SaleProcessRequest
+  ): Promise<SaleProcessResult> {
+    // Usar RPC para transacción atómica
+    const { data, error } = await supabase.rpc("process_sale", {
+      sale_items: request.items.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.price,
+      })),
+      payment_method: request.paymentMethod,
+      total_amount: request.total,
+    });
+
+    if (error) {
+      console.error("Error in sale transaction:", error);
+      return {
+        success: false,
+        message:
+          "Error al procesar la venta: " +
+          (error?.message || "Error desconocido"),
+      };
+    }
+
+    return {
+      success: true,
+      saleId: data?.sale_id || undefined,
+      message: "¡Venta procesada exitosamente!",
+    };
+  }
+
+  // Obtener ventas recientes
+  async getRecentSales(limit: number = 10) {
+    const { data, error } = await supabase
+      .from("sales")
+      .select(
+        `
+        sale_id,
+        total_amount,
+        payment_method,
+        created_at,
+        sale_details (
+          quantity,
+          unit_price,
+          products (
+            name
+          )
+        )
+      `
+      )
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error("Error fetching recent sales:", error);
+      throw error;
+    }
+
+    return data || [];
+  }
+}
+
+export const salesService = new SalesService();
