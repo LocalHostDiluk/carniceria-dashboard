@@ -44,7 +44,6 @@ const PosProductCard = ({
 
 export default function SalesPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
-  const { user } = useUser();
   const [products, setProducts] = useState<ProductWithCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,12 +53,6 @@ export default function SalesPage() {
     useState<ProductWithCategory | null>(null);
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isProcessingSale, setIsProcessingSale] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      console.log("🔍 Tu User ID es:", user.id);
-    }
-  }, [user]);
 
   useEffect(() => {
     const loadProducts = async () => {
