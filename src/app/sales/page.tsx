@@ -21,7 +21,6 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { toast } from "sonner";
 import { salesService, type SaleProcessRequest } from "@/services/salesService";
 import { SaleConfirmationModal } from "@/components/sales/SaleConfirmationModal";
-import { useUser } from "@/hooks/useUser";
 
 // Un componente simple para la tarjeta de producto en el POS
 const PosProductCard = ({
