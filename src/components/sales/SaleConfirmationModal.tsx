@@ -18,7 +18,7 @@ import {
   Banknote,
   Loader2,
 } from "lucide-react";
-import type { CartItem } from "@/app/sales/components/TicketItem";
+import type { CartItem } from "@/components/sales/TicketItem";
 
 interface SaleConfirmationModalProps {
   isOpen: boolean;

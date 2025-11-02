@@ -1,6 +1,8 @@
 // src/app/login/page.tsx
-import { LoginForm } from "./components/LoginForm";
-import LoginImage from "./components/LoginImage";
+
+import { LoginForm } from "@/components/login/LoginForm";
+import LoginImage from "@/components/login/LoginImage";
+
 
 export default function LoginPage() {
   return (

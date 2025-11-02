@@ -1,5 +1,5 @@
 import { supabase } from "@/lib/supabaseClient";
-import type { CartItem } from "@/app/sales/components/TicketItem";
+import type { CartItem } from "@/components/sales/TicketItem";
 
 export interface SaleProcessRequest {
   items: CartItem[];

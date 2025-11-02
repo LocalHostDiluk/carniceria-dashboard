@@ -15,7 +15,7 @@ import {
   getActiveProducts,
   type ProductWithCategory,
 } from "@/services/productService";
-import { type CartItem, TicketItem } from "./components/TicketItem";
+import { type CartItem, TicketItem } from "../../components/sales/TicketItem";
 import { UnifiedQuantityModal } from "@/components/sales/UnifiedQuantityModal";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { toast } from "sonner";
