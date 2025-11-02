@@ -10,28 +10,26 @@
 - **✅ Procesamiento de Transacciones que actualiza todo automáticamente**
 - **✅ Base de Datos Limpia y bien estructurada**
 - **✅ UI/UX Increíble con diseño moderno**
+- **✅ Pantalla de cierre de caja funcional**
+- **✅ Seguridad en cierre de caja**
+- **✅ Pantalla de reportes/historial ventas/gastos**
 
 ---
 
 ## 🚧 Funcionalidades Pendientes
-
-### 🟠 Pantalla de Cierre de Caja
-
-- Diseño e implementación de la vista
-- Lógica de cierre de caja (cálculos, resumen y confirmación)
-- Registro de historial de cierres
-- Validaciones y bloqueo según permisos de usuario
-
-### 🛡️ Seguridad
-
-- Restricción de acceso a pantalla de cierre de caja por rol/permiso
-- Validaciones de acciones críticas (ej. confirmación de cierre)
 
 ### 👤 Administración de Usuario
 
 - Cambio de contraseña
 - Configuración de perfil básico (si aplica)
 - Control de sesión y seguridad adicional
+
+### 📊 Reportes
+
+- Corregir la obtención de datos
+- Creación de gráficas
+- Historial ventas/gastos
+- Creación de reportes
 
 ---
 
@@ -50,7 +48,6 @@
 ## 🎯 Objetivo General de Siguientes Entregables
 
 - Finalizar inventario para tener CRUD completo y funcional
-- Desarrollar cierre de caja con seguridad y control de usuario
 - Añadir administración de usuario para control interno del sistema
 
 ---
