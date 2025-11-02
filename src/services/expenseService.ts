@@ -2,10 +2,10 @@ import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
 
 export type ExpenseCategory =
-  | "combustible" // ⛽ Gasolina, diesel para camión/moto
-  | "servicios" // 💡 Luz, gas, internet, teléfono
-  | "mantenimiento" // 🔧 Reparaciones de frigorífico, báscula
-  | "compras_menores"; // 🛒 Bolsas, hielo, papelería, guantes
+  | "combustible"
+  | "servicios"
+  | "mantenimiento"
+  | "compras_menores";
 
 export type PaymentMethod = "efectivo" | "tarjeta" | "transferencia";
 
@@ -14,7 +14,7 @@ export interface ExpenseRequest {
   description: string;
   category: ExpenseCategory;
   payment_method: PaymentMethod;
-  expense_date?: string; // ISO date string
+  expense_date?: string;
 }
 
 export interface Expense {
@@ -29,7 +29,7 @@ export interface Expense {
   updated_at: string;
   user_profiles?: {
     username: string;
-  }[] | null;
+  } | null; // ✅ CORREGIDO: objeto único, no array
 }
 
 export interface DailyCashFlow {
@@ -42,14 +42,14 @@ export interface DailyCashFlow {
     count: number;
   };
   expenses: {
-    purchases: number; // Compras a proveedores
-    operations: number; // Gastos operativos
-    total: number; // Total egresos
+    purchases: number;
+    operations: number;
+    total: number;
   };
   cash_flow: {
-    in: number; // Efectivo que entró
-    out: number; // Efectivo que salió
-    net: number; // Flujo neto
+    in: number;
+    out: number;
+    net: number;
   };
   closure: {
     is_closed: boolean;
@@ -63,9 +63,19 @@ export interface DailyCashFlow {
 }
 
 class ExpenseService {
-  // 💰 CREAR NUEVO GASTO
+  // 💰 CREAR NUEVO GASTO - CORREGIDO
   async createExpense(request: ExpenseRequest): Promise<Expense> {
     try {
+      // ✅ OBTENER USER ID
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      if (userError || !user) {
+        throw new Error("Usuario no autenticado");
+      }
+
       const { data, error } = await supabase
         .from("daily_expenses")
         .insert({
@@ -75,6 +85,7 @@ class ExpenseService {
           payment_method: request.payment_method,
           expense_date:
             request.expense_date || new Date().toISOString().split("T")[0],
+          user_id: user.id, // ✅ AGREGADO: user_id
         })
         .select(
           `
@@ -136,7 +147,7 @@ class ExpenseService {
       return (data || []) as Expense[];
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("💥 Error getting daily expenses:", appError);
+      console.error("Error getting daily expenses:", appError);
       return [];
     }
   }
@@ -156,7 +167,7 @@ class ExpenseService {
       return data as DailyCashFlow;
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("💥 Error getting daily cash flow:", appError);
+      console.error("Error getting daily cash flow:", appError);
       throw appError;
     }
   }
@@ -172,7 +183,7 @@ class ExpenseService {
       if (error) throw error;
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("💥 Error deleting expense:", appError);
+      console.error("Error deleting expense:", appError);
       throw appError;
     }
   }
@@ -225,12 +236,12 @@ class ExpenseService {
       return data as Expense;
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("💥 Error updating expense:", appError);
+      console.error("Error updating expense:", appError);
       throw appError;
     }
   }
 
-  // 📊 RESUMEN DE GASTOS (últimos días)
+  // 📊 RESUMEN DE GASTOS
   async getExpensesSummary(days: number = 7): Promise<{
     total_amount: number;
     total_count: number;
@@ -250,7 +261,6 @@ class ExpenseService {
       if (error) throw error;
 
       const expenses = data || [];
-
       const totalAmount = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
       const byCategory = expenses.reduce((acc, exp) => {
@@ -274,7 +284,7 @@ class ExpenseService {
       };
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("💥 Error getting expense summary:", appError);
+      console.error("Error getting expense summary:", appError);
       return {
         total_amount: 0,
         total_count: 0,
