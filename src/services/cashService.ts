@@ -1,15 +1,6 @@
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
-
-export interface DailySummary {
-  date: string;
-  total_sales: number;
-  cash_sales: number;
-  card_sales: number;
-  transfer_sales: number;
-  sales_count: number;
-  is_closed: boolean;
-}
+import { expenseService, type DailyCashFlow } from "./expenseService";
 
 export interface CashClosureRequest {
   starting_cash: number;
@@ -21,10 +12,19 @@ export interface CashClosureResult {
   success: boolean;
   session_id?: string;
   date: string;
-  starting_cash: number;
-  ending_cash: number;
-  calculated_sales: number;
-  difference: number;
+  cash_flow: {
+    starting_cash: number;
+    cash_in: number;
+    cash_out: number;
+    expected_ending: number;
+    actual_ending: number;
+    difference: number;
+  };
+  breakdown: {
+    sales_cash: number;
+    purchases_cash: number;
+    expenses_cash: number;
+  };
   difference_type: "surplus" | "deficit" | "exact";
   message: string;
 }
@@ -40,32 +40,20 @@ export interface CashSession {
   difference?: number | null;
   notes?: string | null;
   session_date: string;
-  user_profiles: {
-    username: string;
-  }[] | null;
+  user_profiles:
+    | {
+        username: string;
+      }[]
+    | null;
 }
 
 class CashService {
-  async getDailySummary(date?: string): Promise<DailySummary> {
-    try {
-      const targetDate = date || new Date().toISOString().split("T")[0];
-
-      const { data, error } = await supabase.rpc("get_daily_cash_summary", {
-        target_date: targetDate,
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      return data as DailySummary;
-    } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("💥 Error getting daily summary:", appError);
-      throw appError;
-    }
+  // 📊 OBTENER FLUJO DE CAJA DEL DÍA
+  async getDailyCashFlow(date?: string): Promise<DailyCashFlow> {
+    return expenseService.getDailyCashFlow(date);
   }
 
+  // 💰 CERRAR CAJA CON LÓGICA CORRECTA
   async closeCashDrawer(
     request: CashClosureRequest
   ): Promise<CashClosureResult> {
@@ -76,18 +64,14 @@ class CashService {
         closure_notes: request.notes || null,
       });
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       return {
         success: true,
         session_id: data.session_id,
         date: data.date,
-        starting_cash: data.starting_cash,
-        ending_cash: data.ending_cash,
-        calculated_sales: data.calculated_sales,
-        difference: data.difference,
+        cash_flow: data.cash_flow,
+        breakdown: data.breakdown,
         difference_type: data.difference_type,
         message: data.message,
       };
@@ -99,16 +83,26 @@ class CashService {
         success: false,
         session_id: undefined,
         date: new Date().toISOString().split("T")[0],
-        starting_cash: request.starting_cash,
-        ending_cash: request.ending_cash,
-        calculated_sales: 0,
-        difference: 0,
+        cash_flow: {
+          starting_cash: request.starting_cash,
+          cash_in: 0,
+          cash_out: 0,
+          expected_ending: request.starting_cash,
+          actual_ending: request.ending_cash,
+          difference: 0,
+        },
+        breakdown: {
+          sales_cash: 0,
+          purchases_cash: 0,
+          expenses_cash: 0,
+        },
         difference_type: "exact",
         message: ErrorHandler.getUserFriendlyMessage(appError),
       };
     }
   }
 
+  // 📋 OBTENER HISTORIAL DE CIERRES
   async getCashSessions(limit: number = 10): Promise<CashSession[]> {
     try {
       const { data, error } = await supabase
@@ -133,9 +127,7 @@ class CashService {
         .order("start_time", { ascending: false })
         .limit(limit);
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       return (data || []) as CashSession[];
     } catch (error) {
@@ -145,6 +137,7 @@ class CashService {
     }
   }
 
+  // 🔐 VERIFICAR PERMISOS
   async canCloseCash(userId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase
@@ -153,16 +146,14 @@ class CashService {
         .eq("id", userId)
         .single();
 
-      if (error || !data) {
-        return false;
-      }
-
+      if (error || !data) return false;
       return data.role === "encargado";
     } catch {
       return false;
     }
   }
 
+  // ✅ VERIFICAR SI YA ESTÁ CERRADO
   async isCashAlreadyClosed(date?: string): Promise<boolean> {
     try {
       const targetDate = date || new Date().toISOString().split("T")[0];
@@ -174,10 +165,7 @@ class CashService {
         .not("end_time", "is", null)
         .limit(1);
 
-      if (error) {
-        return false;
-      }
-
+      if (error) return false;
       return Boolean(data && data.length > 0);
     } catch {
       return false;

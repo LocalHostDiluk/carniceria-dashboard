@@ -12,24 +12,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  DollarSign,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Lock,
-} from "lucide-react";
+import { DollarSign, Lock } from "lucide-react";
 
 import { cashService } from "@/services/cashService";
+import { expenseService } from "@/services/expenseService";
 import { useUser } from "@/hooks/useUser";
+import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
+import { DailySummaryCard } from "./DailySummaryCard";
+import { CashFlowCard } from "./CashFlowCard";
+import { CashCalculationCard } from "./CashCalculationCard";
+
 import type {
-  DailySummary,
   CashClosureRequest,
   CashClosureResult,
 } from "@/services/cashService";
-import { Separator } from "../ui/separator";
-import { Textarea } from "../ui/textarea";
+import type { DailyCashFlow, Expense } from "@/services/expenseService";
 
 interface CashClosureModalProps {
   open: boolean;
@@ -42,47 +39,57 @@ export function CashClosureModal({
   onOpenChange,
   onSuccess,
 }: CashClosureModalProps) {
-  const { user, profile, validateManager } = useUser();
+  const { validateManager } = useUser();
 
-  // Estados
-  const [dailySummary, setDailySummary] = useState<DailySummary | null>(null);
+  // Estados principales
+  const [dailyFlow, setDailyFlow] = useState<DailyCashFlow | null>(null);
+  const [dailyExpenses, setDailyExpenses] = useState<Expense[]>([]);
   const [startingCash, setStartingCash] = useState<string>("");
   const [endingCash, setEndingCash] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
 
-  // Validación de encargado
+  // Estados de validación
   const [managerEmail, setManagerEmail] = useState<string>("");
   const [managerPassword, setManagerPassword] = useState<string>("");
   const [isValidatingManager, setIsValidatingManager] = useState(false);
   const [managerValidated, setManagerValidated] = useState(false);
 
-  // Cargar resumen del día
+  // Estados UI
+  const [showAddExpense, setShowAddExpense] = useState(false);
+  const [showExpenseDetails, setShowExpenseDetails] = useState(false);
+
+  // Cargar datos del día
   useEffect(() => {
     if (open) {
-      loadDailySummary();
+      loadDailyData();
       resetForm();
     }
   }, [open]);
 
-  const loadDailySummary = async () => {
-    setLoadingSummary(true);
+  const loadDailyData = async () => {
+    setLoadingData(true);
     try {
-      const summary = await cashService.getDailySummary();
-      setDailySummary(summary);
+      const [flowData, expensesData] = await Promise.all([
+        expenseService.getDailyCashFlow(),
+        expenseService.getDailyExpenses(),
+      ]);
 
-      if (summary.is_closed) {
+      setDailyFlow(flowData);
+      setDailyExpenses(expensesData);
+
+      if (flowData.closure.is_closed) {
         toast.error("La caja ya fue cerrada hoy", {
           description: "No se puede cerrar la caja más de una vez por día",
         });
         onOpenChange(false);
       }
     } catch (error) {
-      console.error("Error loading daily summary:", error);
-      toast.error("Error al cargar resumen del día");
+      console.error("Error loading daily data:", error);
+      toast.error("Error al cargar datos del día");
     } finally {
-      setLoadingSummary(false);
+      setLoadingData(false);
     }
   };
 
@@ -93,6 +100,7 @@ export function CashClosureModal({
     setManagerEmail("");
     setManagerPassword("");
     setManagerValidated(false);
+    setShowExpenseDetails(false);
   };
 
   const handleValidateManager = async () => {
@@ -113,13 +121,14 @@ export function CashClosureModal({
       }
     } catch (error) {
       toast.error("Error al validar encargado");
+      console.error("Error validating manager:", error);
     } finally {
       setIsValidatingManager(false);
     }
   };
 
   const handleCloseCash = async () => {
-    if (!dailySummary || !managerValidated) return;
+    if (!dailyFlow || !managerValidated) return;
 
     const startingAmount = parseFloat(startingCash);
     const endingAmount = parseFloat(endingCash);
@@ -149,7 +158,7 @@ export function CashClosureModal({
         toast.success(result.message, {
           description: getDifferenceMessage(
             result.difference_type,
-            result.difference
+            result.cash_flow.difference
           ),
         });
 
@@ -160,6 +169,7 @@ export function CashClosureModal({
       }
     } catch (error) {
       toast.error("Error al cerrar caja");
+      console.error("Error closing cash drawer:", error);
     } finally {
       setIsLoading(false);
     }
@@ -179,270 +189,152 @@ export function CashClosureModal({
     }
   };
 
-  const calculatePotentialDifference = (): number | null => {
-    if (!dailySummary || !startingCash || !endingCash) return null;
-
-    const starting = parseFloat(startingCash);
-    const ending = parseFloat(endingCash);
-
-    if (isNaN(starting) || isNaN(ending)) return null;
-
-    return ending - dailySummary.cash_sales - starting;
+  const handleExpenseAdded = () => {
+    loadDailyData();
   };
 
-  const potentialDiff = calculatePotentialDifference();
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5" />
-            Cierre de Caja
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-3 text-2xl">
+              <DollarSign className="h-6 w-6" />
+              Cierre de Caja
+            </DialogTitle>
+          </DialogHeader>
 
-        {loadingSummary ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Resumen del día */}
-            {dailySummary && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Resumen del Día</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Total Ventas
-                      </Label>
-                      <p className="text-2xl font-bold">
-                        ${dailySummary.total_sales.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Número de Ventas
-                      </Label>
-                      <p className="text-2xl font-bold">
-                        {dailySummary.sales_count}
-                      </p>
-                    </div>
-                  </div>
+          {loadingData ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Resumen del día */}
+              {dailyFlow && (
+                <DailySummaryCard
+                  dailyFlow={dailyFlow}
+                  dailyExpenses={dailyExpenses}
+                  showExpenseDetails={showExpenseDetails}
+                  onToggleExpenseDetails={() =>
+                    setShowExpenseDetails(!showExpenseDetails)
+                  }
+                  onAddExpense={() => setShowAddExpense(true)}
+                />
+              )}
 
-                  <Separator />
+              {/* Flujo neto */}
+              {dailyFlow && <CashFlowCard dailyFlow={dailyFlow} />}
 
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Efectivo
-                      </Label>
-                      <p className="text-xl font-semibold text-green-600">
-                        ${dailySummary.cash_sales.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Tarjeta
-                      </Label>
-                      <p className="text-xl font-semibold text-blue-600">
-                        ${dailySummary.card_sales.toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <Label className="text-sm text-muted-foreground">
-                        Transferencia
-                      </Label>
-                      <p className="text-xl font-semibold text-purple-600">
-                        ${dailySummary.transfer_sales.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Validación de encargado */}
-            {!managerValidated ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-amber-600">
-                    <Lock className="h-5 w-5" />
-                    Validación de Encargado
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="manager-email">Email del Encargado</Label>
-                    <Input
-                      id="manager-email"
-                      type="email"
-                      value={managerEmail}
-                      onChange={(e) => setManagerEmail(e.target.value)}
-                      placeholder="encargado@carniceria.com"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="manager-password">Contraseña</Label>
-                    <Input
-                      id="manager-password"
-                      type="password"
-                      value={managerPassword}
-                      onChange={(e) => setManagerPassword(e.target.value)}
-                      placeholder="••••••••"
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleValidateManager}
-                    disabled={
-                      isValidatingManager || !managerEmail || !managerPassword
-                    }
-                    className="w-full"
-                  >
-                    {isValidatingManager ? "Validando..." : "Validar Encargado"}
-                  </Button>
-                </CardContent>
-              </Card>
-            ) : (
-              <>
-                {/* Formulario de cierre */}
-                <Card>
+              {/* Validación de encargado */}
+              {!managerValidated ? (
+                <Card className="border-amber-200">
                   <CardHeader>
-                    <CardTitle>Efectivo en Caja</CardTitle>
+                    <CardTitle className="flex items-center gap-3 text-amber-700">
+                      <Lock className="h-5 w-5" />
+                      Validación de Encargado
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="starting-cash">
-                          Efectivo Inicial ($)
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="manager-email"
+                          className="text-sm font-semibold"
+                        >
+                          Email del Encargado
                         </Label>
                         <Input
-                          id="starting-cash"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={startingCash}
-                          onChange={(e) => setStartingCash(e.target.value)}
-                          placeholder="0.00"
+                          id="manager-email"
+                          type="email"
+                          value={managerEmail}
+                          onChange={(e) => setManagerEmail(e.target.value)}
+                          placeholder="encargado@carniceria.com"
+                          className="h-11"
                         />
                       </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="ending-cash">Efectivo Final ($)</Label>
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="manager-password"
+                          className="text-sm font-semibold"
+                        >
+                          Contraseña
+                        </Label>
                         <Input
-                          id="ending-cash"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={endingCash}
-                          onChange={(e) => setEndingCash(e.target.value)}
-                          placeholder="0.00"
+                          id="manager-password"
+                          type="password"
+                          value={managerPassword}
+                          onChange={(e) => setManagerPassword(e.target.value)}
+                          placeholder="••••••••"
+                          className="h-11"
                         />
                       </div>
                     </div>
 
-                    {/* Mostrar diferencia potencial */}
-                    {potentialDiff !== null && (
-                      <div
-                        className={`p-3 rounded-lg border-2 ${
-                          potentialDiff > 0
-                            ? "border-green-200 bg-green-50"
-                            : potentialDiff < 0
-                            ? "border-red-200 bg-red-50"
-                            : "border-blue-200 bg-blue-50"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          {potentialDiff > 0 ? (
-                            <TrendingUp className="h-5 w-5 text-green-600" />
-                          ) : potentialDiff < 0 ? (
-                            <TrendingDown className="h-5 w-5 text-red-600" />
-                          ) : (
-                            <Minus className="h-5 w-5 text-blue-600" />
-                          )}
-                          <div>
-                            <p className="font-semibold">
-                              {potentialDiff > 0 &&
-                                `Sobrante: $${potentialDiff.toFixed(2)}`}
-                              {potentialDiff < 0 &&
-                                `Faltante: $${Math.abs(potentialDiff).toFixed(
-                                  2
-                                )}`}
-                              {potentialDiff === 0 &&
-                                "Caja Cuadrada Perfectamente"}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              Diferencia calculada automáticamente
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="space-y-2">
-                      <Label htmlFor="notes">Notas del Cierre (Opcional)</Label>
-                      <Textarea
-                        id="notes"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Notas adicionales sobre el cierre de caja..."
-                        rows={3}
-                      />
-                    </div>
+                    <Button
+                      onClick={handleValidateManager}
+                      disabled={
+                        isValidatingManager || !managerEmail || !managerPassword
+                      }
+                      className="w-full h-11"
+                      size="lg"
+                    >
+                      {isValidatingManager
+                        ? "Validando..."
+                        : "Validar Encargado"}
+                    </Button>
                   </CardContent>
                 </Card>
+              ) : (
+                <>
+                  {/* Cálculo de efectivo */}
+                  {dailyFlow && (
+                    <CashCalculationCard
+                      dailyFlow={dailyFlow}
+                      startingCash={startingCash}
+                      endingCash={endingCash}
+                      notes={notes}
+                      onStartingCashChange={setStartingCash}
+                      onEndingCashChange={setEndingCash}
+                      onNotesChange={setNotes}
+                    />
+                  )}
 
-                {/* Botones de acción */}
-                <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => onOpenChange(false)}
-                    className="flex-1"
-                    disabled={isLoading}
-                  >
-                    Cancelar
-                  </Button>
+                  {/* Botones de acción */}
+                  <div className="flex gap-4 pt-6">
+                    <Button
+                      variant="outline"
+                      onClick={() => onOpenChange(false)}
+                      className="flex-1 h-12"
+                      disabled={isLoading}
+                      size="lg"
+                    >
+                      Cancelar
+                    </Button>
 
-                  <Button
-                    onClick={handleCloseCash}
-                    disabled={isLoading || !startingCash || !endingCash}
-                    className="flex-1"
-                  >
-                    {isLoading ? "Cerrando Caja..." : "Cerrar Caja"}
-                  </Button>
-                </div>
+                    <Button
+                      onClick={handleCloseCash}
+                      disabled={isLoading || !startingCash || !endingCash}
+                      className="flex-1 h-12"
+                      size="lg"
+                    >
+                      {isLoading ? "Cerrando Caja..." : "Cerrar Caja"}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
-                {/* Advertencia si hay diferencia grande */}
-                {potentialDiff !== null && Math.abs(potentialDiff) > 100 && (
-                  <Card className="border-amber-200 bg-amber-50">
-                    <CardContent className="pt-6">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                        <div>
-                          <p className="font-semibold text-amber-800">
-                            Diferencia Importante Detectada
-                          </p>
-                          <p className="text-sm text-amber-700">
-                            Hay una diferencia de $
-                            {Math.abs(potentialDiff).toFixed(2)}. Verifica los
-                            montos antes de continuar.
-                          </p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+      {/* Modal para agregar gastos */}
+      <AddExpenseModal
+        open={showAddExpense}
+        onOpenChange={setShowAddExpense}
+        onSuccess={handleExpenseAdded}
+      />
+    </>
   );
 }
