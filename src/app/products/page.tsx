@@ -10,6 +10,10 @@ import { ProductForm } from "@/components/products/ProductForm";
 import { productService, type Product } from "@/services/productService";
 import { toast } from "sonner";
 import { ProductFilters } from "@/components/products/ProductFilters";
+import { InventoryLot } from "@/services/lotService";
+import { AdjustmentForm } from "@/components/products/AdjustmentForm";
+import { LotForm } from "@/components/products/LotForm";
+import { ProductLotsModal } from "@/components/products/ProductLotsModal";
 
 export default function ProductsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
@@ -23,6 +27,15 @@ export default function ProductsPage() {
     is_featured: "",
     has_stock: "",
   });
+  const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
+  const [selectedProductForLots, setSelectedProductForLots] =
+    useState<Product | null>(null);
+  const [isLotFormOpen, setIsLotFormOpen] = useState(false);
+  const [selectedProductForNewLot, setSelectedProductForNewLot] =
+    useState<Product | null>(null);
+  const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = useState(false);
+  const [selectedLotForAdjustment, setSelectedLotForAdjustment] =
+    useState<InventoryLot | null>(null);
 
   // Estado del formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -125,6 +138,33 @@ export default function ProductsPage() {
     setFilters(newFilters);
   };
 
+  const handleViewLots = (product: Product) => {
+    setSelectedProductForLots(product);
+    setIsLotsModalOpen(true);
+  };
+
+  const handleCreateLot = (product: Product) => {
+    setSelectedProductForNewLot(product);
+    setIsLotFormOpen(true);
+  };
+
+  const handleAdjustLot = (lot: InventoryLot) => {
+    setSelectedLotForAdjustment(lot);
+    setIsAdjustmentFormOpen(true);
+  };
+
+  const handleLotFormSuccess = () => {
+    loadProducts();
+    if (isLotsModalOpen) {
+    }
+  };
+
+  const handleAdjustmentSuccess = () => {
+    loadProducts();
+    if (isLotsModalOpen) {
+    }
+  };
+
   // Loading states
   if (authLoading) {
     return <div className="p-4">Verificando sesión...</div>;
@@ -195,15 +235,41 @@ export default function ProductsPage() {
           products={filteredProducts}
           isLoading={isLoading}
           onEdit={handleEditProduct}
+          onViewLots={handleViewLots}
+          onCreateLot={handleCreateLot}
           onRefresh={loadProducts}
         />
 
-        {/* Formulario */}
+        {/* Modales y Formulario */}
         <ProductForm
           product={editingProduct}
           isOpen={isFormOpen}
           onClose={handleFormClose}
           onSuccess={handleFormSuccess}
+        />
+
+        <ProductLotsModal
+          product={selectedProductForLots}
+          isOpen={isLotsModalOpen}
+          onClose={() => setIsLotsModalOpen(false)}
+          onCreateLot={handleCreateLot}
+          onAdjustLot={handleAdjustLot}
+        />
+
+        {/* Formulario nuevo lote */}
+        <LotForm
+          product={selectedProductForNewLot}
+          isOpen={isLotFormOpen}
+          onClose={() => setIsLotFormOpen(false)}
+          onSuccess={handleLotFormSuccess}
+        />
+
+        {/* Formulario ajuste */}
+        <AdjustmentForm
+          lot={selectedLotForAdjustment}
+          isOpen={isAdjustmentFormOpen}
+          onClose={() => setIsAdjustmentFormOpen(false)}
+          onSuccess={handleAdjustmentSuccess}
         />
       </div>
     </DashboardLayout>

@@ -23,11 +23,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { productService, type Product } from "@/services/productService";
 import { toast } from "sonner";
 import { getImageFallback, getImageUrl } from "@/lib/imageUtils";
+import { Package2, Plus } from "lucide-react";
 
 interface ProductTableProps {
   products: Product[];
   isLoading: boolean;
   onEdit: (product: Product) => void;
+  onViewLots: (product: Product) => void;
+  onCreateLot: (product: Product) => void;
   onRefresh: () => void;
 }
 
@@ -35,6 +38,8 @@ export function ProductTable({
   products,
   isLoading,
   onEdit,
+  onViewLots,
+  onCreateLot,
   onRefresh,
 }: ProductTableProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
@@ -215,6 +220,16 @@ export function ProductTable({
                     <DropdownMenuItem onClick={() => onEdit(product)}>
                       <Edit className="h-4 w-4 mr-2" />
                       Editar
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => onViewLots(product)}>
+                      <Package2 className="h-4 w-4 mr-2" />
+                      Ver Lotes
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem onClick={() => onCreateLot(product)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nuevo Lote
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator />

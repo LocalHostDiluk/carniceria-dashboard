@@ -99,7 +99,7 @@ export const Header = () => {
                 className="flex items-center gap-2 text-lg font-semibold mb-4"
               >
                 <Package className="h-6 w-6" />
-                <span>Carnicería POS</span>
+                <span>Carnicería La Picota</span>
               </Link>
               {navLinks.map((link) => {
                 const isActive = pathname === link.href;
