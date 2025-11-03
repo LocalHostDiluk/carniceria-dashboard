@@ -21,6 +21,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { toast } from "sonner";
 import { salesService, type SaleProcessRequest } from "@/services/salesService";
 import { SaleConfirmationModal } from "@/components/sales/SaleConfirmationModal";
+import { getImageUrl, getImageFallback } from "@/lib/imageUtils";
 
 // Un componente simple para la tarjeta de producto en el POS
 const PosProductCard = ({
@@ -29,17 +30,31 @@ const PosProductCard = ({
 }: {
   product: ProductWithCategory;
   onSelect: () => void;
-}) => (
-  <Card
-    onClick={onSelect}
-    className="cursor-pointer hover:border-primary transition-colors"
-  >
-    <CardHeader className="p-2">
-      <div className="aspect-square w-full bg-muted rounded-md mb-2"></div>
-      <p className="font-semibold text-sm truncate">{product.name}</p>
-    </CardHeader>
-  </Card>
-);
+}) => {
+  const imgSrc =
+    getImageUrl((product as any).image_url) || getImageFallback(product.name);
+  return (
+    <Card
+      onClick={onSelect}
+      className="cursor-pointer hover:border-primary transition-colors"
+    >
+      <CardHeader className="p-2">
+        <div className="aspect-square w-full rounded-md mb-2 overflow-hidden bg-muted">
+          <img
+            src={imgSrc}
+            alt={product.name}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.src = getImageFallback(product.name);
+            }}
+          />
+        </div>
+        <p className="font-semibold text-sm truncate">{product.name}</p>
+      </CardHeader>
+    </Card>
+  );
+};
 
 export default function SalesPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();

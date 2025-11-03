@@ -78,6 +78,7 @@ export async function getActiveProducts(): Promise<ProductWithCategory[]> {
         can_be_sold_by_weight: !!p.can_be_sold_by_weight,
         is_active: !!p.is_active,
         is_featured: !!p.is_featured,
+        image_url: p.image_url || null, // ✅ AGREGAR ESTA LÍNEA
       }));
   } catch (error) {
     const appError = ErrorHandler.fromSupabaseError(error);
