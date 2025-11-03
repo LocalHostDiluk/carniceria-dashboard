@@ -1,61 +1,211 @@
 import { supabase } from "@/lib/supabaseClient";
-import type { Database } from "@/types/supabase";
+import { ErrorHandler } from "@/lib/errorHandler";
+import { storageService } from "./storageService";
 
-// Tipos base
-export type ProductRow = Database["public"]["Tables"]["products"]["Row"];
-export type CategoryRow = Database["public"]["Tables"]["categories"]["Row"];
-export type InventoryLotRow =
-  Database["public"]["Tables"]["inventory_lots"]["Row"];
+// Tipos para productos
+export interface Product {
+  product_id: string;
+  name: string;
+  category_id: string;
+  category_name?: string;
+  sale_price: number;
+  unit_of_measure: string;
+  supplier_id?: string;
+  supplier_name?: string;
+  can_be_sold_by_weight: boolean;
+  is_active: boolean;
+  is_featured: boolean;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+  total_stock?: number;
+  active_lots?: number;
+}
 
-// Tipos extendidos
-export type ProductWithCategory = ProductRow & {
-  categories: CategoryRow | null;
-};
-export type ProductWithLots = ProductRow & {
-  inventory_lots: InventoryLotRow[] | null;
-  categories: CategoryRow | null;
-};
+export interface CreateProductData {
+  name: string;
+  category_id: string;
+  sale_price: number;
+  unit_of_measure: "kg" | "pieza" | "rueda" | "bote" | "paquete";
+  supplier_id?: string;
+  can_be_sold_by_weight?: boolean;
+  is_featured?: boolean;
+  image_file?: File;
+}
 
-/**
- * ✅ Obtiene todos los productos activos con su categoría
- */
-export const getActiveProducts = async (): Promise<ProductWithCategory[]> => {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
-      *,
-      categories ( * )
-    `
-    )
-    .eq("is_active", true);
+export interface UpdateProductData extends Partial<CreateProductData> {
+  is_active?: boolean;
+  remove_image?: boolean;
+}
 
-  if (error) {
-    console.error("Error fetching active products:", error);
-    throw new Error("No se pudieron cargar los productos.");
+export interface Category {
+  category_id: string;
+  name: string;
+}
+
+export interface Supplier {
+  supplier_id: string;
+  name: string;
+  contact_info?: string;
+}
+
+export class ProductService {
+  // Obtener lista de productos
+  async getProducts(): Promise<Product[]> {
+    try {
+      const { data, error } = await supabase.rpc("get_products_list");
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error getting products:", appError);
+      throw appError;
+    }
   }
-  return data as ProductWithCategory[];
-};
 
-/**
- * ✅ Obtiene todo el inventario (productos con sus lotes)
- */
-export const getInventory = async (): Promise<ProductWithLots[]> => {
-  const { data, error } = await supabase
-    .from("products")
-    .select(
-      `
-      *,
-      categories ( name ),
-      inventory_lots ( * )
-    `
-    )
-    .eq("is_active", true);
+  // Crear producto
+  async createProduct(productData: CreateProductData): Promise<string> {
+    try {
+      let imageUrl: string | undefined;
 
-  if (error) {
-    console.error("Error fetching inventory:", error);
-    throw new Error("No se pudo cargar el inventario.");
+      // Subir imagen si se proporciona
+      if (productData.image_file) {
+        imageUrl = await storageService.uploadProductImage(
+          productData.image_file
+        );
+      }
+
+      // Crear producto
+      const { data, error } = await supabase.rpc("create_product", {
+        p_name: productData.name,
+        p_category_id: productData.category_id,
+        p_sale_price: productData.sale_price,
+        p_unit_of_measure: productData.unit_of_measure,
+        p_supplier_id: productData.supplier_id || null,
+        p_can_be_sold_by_weight: productData.can_be_sold_by_weight || false,
+        p_is_featured: productData.is_featured || false,
+        p_image_url: imageUrl || null,
+      });
+
+      if (error) throw error;
+
+      return data.product_id;
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error creating product:", appError);
+      throw appError;
+    }
   }
 
-  return data as ProductWithLots[];
-};
+  // Actualizar producto
+  async updateProduct(
+    productId: string,
+    productData: UpdateProductData
+  ): Promise<void> {
+    try {
+      let imageUrl: string | null = null;
+
+      // Manejar imagen
+      if (productData.remove_image) {
+        imageUrl = null;
+      } else if (productData.image_file) {
+        imageUrl = await storageService.uploadProductImage(
+          productData.image_file,
+          productId
+        );
+      }
+
+      // Actualizar producto
+      const { error } = await supabase.rpc("update_product", {
+        p_product_id: productId,
+        p_name: productData.name || null,
+        p_category_id: productData.category_id || null,
+        p_sale_price: productData.sale_price || null,
+        p_unit_of_measure: productData.unit_of_measure || null,
+        p_supplier_id: productData.supplier_id || null,
+        p_can_be_sold_by_weight: productData.can_be_sold_by_weight || null,
+        p_is_featured: productData.is_featured || null,
+        p_is_active: productData.is_active || null,
+        p_image_url: imageUrl,
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error updating product:", appError);
+      throw appError;
+    }
+  }
+
+  // Toggle estado activo
+  async toggleActive(productId: string, isActive: boolean): Promise<void> {
+    try {
+      const { error } = await supabase.rpc("toggle_product_active", {
+        p_product_id: productId,
+        p_is_active: isActive,
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error toggling product active:", appError);
+      throw appError;
+    }
+  }
+
+  // Toggle destacado
+  async toggleFeatured(productId: string, isFeatured: boolean): Promise<void> {
+    try {
+      const { error } = await supabase.rpc("toggle_product_featured", {
+        p_product_id: productId,
+        p_is_featured: isFeatured,
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error toggling product featured:", appError);
+      throw appError;
+    }
+  }
+
+  // Obtener categorías
+  async getCategories(): Promise<Category[]> {
+    try {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("category_id, name")
+        .order("name");
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error getting categories:", appError);
+      throw appError;
+    }
+  }
+
+  // Obtener proveedores
+  async getSuppliers(): Promise<Supplier[]> {
+    try {
+      const { data, error } = await supabase
+        .from("suppliers")
+        .select("supplier_id, name, contact_info")
+        .order("name");
+
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error getting suppliers:", appError);
+      throw appError;
+    }
+  }
+}
+
+export const productService = new ProductService();
