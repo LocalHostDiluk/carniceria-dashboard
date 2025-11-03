@@ -43,13 +43,8 @@ const PREDEFINED_REASONS = {
     { value: "merma", label: "Merma (Deterioro)" },
     { value: "caducado", label: "Producto Caducado" },
     { value: "daño", label: "Daño/Rotura" },
-    { value: "custom", label: "Otra razón..." },
   ],
-  increase: [
-    { value: "ajuste manual", label: "Ajuste Manual" },
-    { value: "recuento", label: "Recuento de Inventario" },
-    { value: "custom", label: "Otra razón..." },
-  ],
+  increase: [{ value: "ajuste manual", label: "Ajuste manual" }],
 } as const;
 
 export function AdjustmentForm({
@@ -104,12 +99,7 @@ export function AdjustmentForm({
           : Math.abs(data.quantity);
 
       // Determinar la razón final
-      const finalReason =
-        data.reason === "custom"
-          ? data.custom_reason
-          : PREDEFINED_REASONS[data.adjustment_type].find(
-              (r) => r.value === data.reason
-            )?.label || data.reason;
+      const finalReason = data.reason;
 
       await lotService.adjustLot(lot.lot_id, adjustmentQuantity, finalReason);
 
