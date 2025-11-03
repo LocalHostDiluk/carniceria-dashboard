@@ -49,6 +49,43 @@ export interface Supplier {
   contact_info?: string;
 }
 
+export interface ProductWithCategory {
+  product_id: string;
+  name: string;
+  category_id: string;
+  category_name: string | null;
+  sale_price: number;
+  unit_of_measure: "kg" | "pieza" | "rueda" | "bote" | "paquete";
+  can_be_sold_by_weight: boolean;
+  is_active: boolean;
+  is_featured: boolean;
+}
+
+export async function getActiveProducts(): Promise<ProductWithCategory[]> {
+  try {
+    const { data, error } = await supabase.rpc("get_products_list");
+    if (error) throw error;
+
+    return (data || [])
+      .filter((p: any) => p.is_active)
+      .map((p: any) => ({
+        product_id: p.product_id,
+        name: p.name,
+        category_id: p.category_id,
+        category_name: p.category_name ?? null,
+        sale_price: Number(p.sale_price),
+        unit_of_measure: p.unit_of_measure,
+        can_be_sold_by_weight: !!p.can_be_sold_by_weight,
+        is_active: !!p.is_active,
+        is_featured: !!p.is_featured,
+      }));
+  } catch (error) {
+    const appError = ErrorHandler.fromSupabaseError(error);
+    console.error("Error getting active products (rpc):", appError);
+    throw appError;
+  }
+}
+
 export class ProductService {
   // Obtener lista de productos
   async getProducts(): Promise<Product[]> {
