@@ -28,6 +28,7 @@ import {
   type Supplier,
 } from "@/services/productService";
 import { toast } from "sonner";
+import { getImageUrl } from "@/lib/imageUtils";
 
 interface ProductFormProps {
   product?: Product | null;
@@ -126,7 +127,8 @@ export function ProductForm({
         // Actualizar producto
         await productService.updateProduct(product.product_id, {
           ...data,
-          supplier_id: data.supplier_id || undefined,
+          supplier_id:
+            data.supplier_id === "null" ? undefined : data.supplier_id,
           image_file: imageFile || undefined,
           remove_image: removeImage,
         });
@@ -135,7 +137,8 @@ export function ProductForm({
         // Crear producto
         await productService.createProduct({
           ...data,
-          supplier_id: data.supplier_id || undefined,
+          supplier_id:
+            data.supplier_id === "null" ? undefined : data.supplier_id,
           image_file: imageFile || undefined,
         });
         toast.success("Producto creado exitosamente");
@@ -174,7 +177,7 @@ export function ProductForm({
           <div className="space-y-2">
             <Label>Imagen del Producto</Label>
             <ImageUpload
-              currentImageUrl={product?.image_url}
+              currentImageUrl={getImageUrl(product?.image_url)}
               onImageChange={handleImageChange}
               onRemoveImage={handleRemoveImage}
               disabled={isLoading}
@@ -278,7 +281,7 @@ export function ProductForm({
                 <SelectValue placeholder="Seleccionar proveedor" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Sin proveedor</SelectItem>
+                <SelectItem value="null">Sin proveedor</SelectItem>
                 {suppliers.map((supplier) => (
                   <SelectItem
                     key={supplier.supplier_id}

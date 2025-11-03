@@ -64,20 +64,20 @@ export default function ProductsPage() {
     }
 
     // Filtro por categoría
-    if (filters.category_id) {
+    if (filters.category_id && filters.category_id !== "all") {
       filtered = filtered.filter(
         (product) => product.category_id === filters.category_id
       );
     }
 
     // Filtro por estado activo
-    if (filters.is_active !== "") {
+    if (filters.is_active && filters.is_active !== "all") {
       const isActive = filters.is_active === "true";
       filtered = filtered.filter((product) => product.is_active === isActive);
     }
 
     // Filtro por destacado
-    if (filters.is_featured !== "") {
+    if (filters.is_featured && filters.is_featured !== "all") {
       const isFeatured = filters.is_featured === "true";
       filtered = filtered.filter(
         (product) => product.is_featured === isFeatured
@@ -85,7 +85,7 @@ export default function ProductsPage() {
     }
 
     // Filtro por stock
-    if (filters.has_stock !== "") {
+    if (filters.has_stock && filters.has_stock !== "all") {
       const hasStock = filters.has_stock === "true";
       filtered = filtered.filter((product) =>
         hasStock

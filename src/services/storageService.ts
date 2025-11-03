@@ -1,38 +1,45 @@
 import { supabase } from "@/lib/supabaseClient";
 
 export class StorageService {
-  private bucketName = "product-images"; // Ajusta esto al nombre de tu bucket
+  private bucketName = "product-images";
 
   // Subir imagen al bucket
   async uploadProductImage(file: File, productId?: string): Promise<string> {
     try {
-      // Generar nombre único para el archivo
       const fileExt = file.name.split(".").pop();
       const fileName = productId
         ? `${productId}.${fileExt}`
         : `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-      const filePath = `products/${fileName}`;
+      const filePath = fileName;
+
+      console.log(`🔄 Uploading file: ${filePath}`); // Debug
 
       // Subir archivo
-      const { error: uploadError } = await supabase.storage
+      const { data, error: uploadError } = await supabase.storage
         .from(this.bucketName)
         .upload(filePath, file, {
-          upsert: true, // Sobrescribir si ya existe
+          upsert: true,
+          contentType: file.type,
         });
 
       if (uploadError) {
+        console.error("❌ Upload error:", uploadError);
         throw uploadError;
       }
 
+      console.log("✅ Upload successful:", data); // Debug
+
       // Obtener URL pública
-      const { data } = supabase.storage
+      const { data: urlData } = supabase.storage
         .from(this.bucketName)
         .getPublicUrl(filePath);
 
-      return data.publicUrl;
+      console.log("🔗 Public URL:", urlData.publicUrl); // Debug
+
+      return urlData.publicUrl;
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("❌ Error uploading image:", error);
       throw new Error("Error al subir la imagen");
     }
   }
@@ -40,13 +47,12 @@ export class StorageService {
   // Eliminar imagen del bucket
   async deleteProductImage(imageUrl: string): Promise<void> {
     try {
-      // Extraer el path de la URL
-      const urlParts = imageUrl.split("/");
-      const filePath = urlParts.slice(-2).join("/"); // products/filename.ext
+      const fileName = imageUrl.split("/").pop();
+      if (!fileName) throw new Error("Invalid image URL");
 
       const { error } = await supabase.storage
         .from(this.bucketName)
-        .remove([filePath]);
+        .remove([fileName]);
 
       if (error) {
         throw error;

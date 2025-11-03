@@ -70,7 +70,9 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
     });
   };
 
-  const activeFiltersCount = Object.values(filters).filter(Boolean).length;
+  const activeFiltersCount = Object.values(filters).filter(
+    (value) => value !== "" && value !== "all"
+  ).length;
 
   return (
     <div className="space-y-4">
@@ -113,7 +115,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
                 <SelectValue placeholder="Todas las categorías" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todas las categorías</SelectItem>
+                <SelectItem value="all">Todas las categorías</SelectItem>
                 {categories.map((category) => (
                   <SelectItem
                     key={category.category_id}
@@ -136,7 +138,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos los estados</SelectItem>
+                <SelectItem value="all">Todos los estados</SelectItem>
                 <SelectItem value="true">Solo activos</SelectItem>
                 <SelectItem value="false">Solo inactivos</SelectItem>
               </SelectContent>
@@ -153,7 +155,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="true">Solo destacados</SelectItem>
                 <SelectItem value="false">No destacados</SelectItem>
               </SelectContent>
@@ -170,7 +172,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Todos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="true">Con stock</SelectItem>
                 <SelectItem value="false">Sin stock</SelectItem>
               </SelectContent>

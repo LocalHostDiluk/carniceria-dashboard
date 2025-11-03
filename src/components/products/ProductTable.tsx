@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Edit,
-  MoreHorizontal,
-  Eye,
-  EyeOff,
-  Star,
-  StarOff,
-} from "lucide-react";
+import { Edit, MoreHorizontal, Eye, EyeOff, Star, StarOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +22,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { productService, type Product } from "@/services/productService";
 import { toast } from "sonner";
+import { getImageFallback, getImageUrl } from "@/lib/imageUtils";
 
 interface ProductTableProps {
   products: Product[];
@@ -134,9 +128,17 @@ export function ProductTable({
               <TableCell>
                 <Avatar className="h-10 w-10">
                   <AvatarImage
-                    src={product.image_url}
+                    src={
+                      getImageUrl(product.image_url) ||
+                      getImageFallback(product.name)
+                    }
                     alt={product.name}
                     className="object-cover"
+                    onError={(e) => {
+                      // Fallback si la imagen falla al cargar
+                      const target = e.target as HTMLImageElement;
+                      target.src = getImageFallback(product.name);
+                    }}
                   />
                   <AvatarFallback>
                     {product.name.charAt(0).toUpperCase()}
