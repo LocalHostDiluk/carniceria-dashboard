@@ -14,9 +14,11 @@ import type {
   FinancialSummary,
 } from "@/services/reportsService";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 export default function ReportsPage() {
   // Estados principales
+  const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [isLoading, setIsLoading] = useState(false);
   const [currentRange, setCurrentRange] = useState<DateRange | null>(null);
 
@@ -26,6 +28,13 @@ export default function ReportsPage() {
   const [salesHistory, setSalesHistory] = useState<SaleRecord[]>([]);
   const [expensesHistory, setExpensesHistory] = useState<ExpenseRecord[]>([]);
 
+  if (authLoading) {
+    return <div className="p-4">Verificando sesión...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
   const loadReports = async (range: DateRange) => {
     setIsLoading(true);
     setCurrentRange(range);

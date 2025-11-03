@@ -81,6 +81,7 @@ export function ProductForm({
         setSuppliers(suppliersData);
       } catch (error) {
         toast.error("Error al cargar datos");
+        console.error(error);
       }
     };
 
@@ -142,8 +143,8 @@ export function ProductForm({
 
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || "Error al guardar el producto");
+    } catch (error: unknown) {
+      toast.error((error as any).message || "Error al guardar el producto");
     } finally {
       setIsLoading(false);
     }
