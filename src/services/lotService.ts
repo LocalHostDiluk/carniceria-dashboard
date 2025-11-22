@@ -93,6 +93,7 @@ export class LotService {
     reason: string
   ): Promise<void> {
     try {
+      
       const { error } = await supabase.rpc("adjust_inventory_lot", {
         p_lot_id: lotId,
         p_quantity: quantity,
