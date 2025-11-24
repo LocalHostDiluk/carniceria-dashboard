@@ -29,6 +29,8 @@ interface ProductLotsModalProps {
   onClose: () => void;
   onCreateLot: (product: Product) => void;
   onAdjustLot: (lot: InventoryLot) => void;
+  refreshKey: number; 
+
 }
 
 export function ProductLotsModal({ 
@@ -36,7 +38,8 @@ export function ProductLotsModal({
   isOpen, 
   onClose, 
   onCreateLot, 
-  onAdjustLot 
+  onAdjustLot ,
+  refreshKey
 }: ProductLotsModalProps) {
   const [lots, setLots] = useState<InventoryLot[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +49,7 @@ export function ProductLotsModal({
     if (isOpen && product) {
       loadLots();
     }
-  }, [isOpen, product]);
+  }, [isOpen, product, refreshKey]);
 
   const loadLots = async () => {
     if (!product) return;

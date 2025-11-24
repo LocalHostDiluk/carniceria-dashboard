@@ -36,6 +36,8 @@ export default function ProductsPage() {
   const [isAdjustmentFormOpen, setIsAdjustmentFormOpen] = useState(false);
   const [selectedLotForAdjustment, setSelectedLotForAdjustment] =
     useState<InventoryLot | null>(null);
+  const [lotsRefreshKey, setLotsRefreshKey] = useState(0);
+
 
   // Estado del formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -154,16 +156,25 @@ export default function ProductsPage() {
   };
 
   const handleLotFormSuccess = () => {
-    loadProducts();
-    if (isLotsModalOpen) {
-    }
-  };
+  // Actualiza totales de producto (cards y tabla principal)
+  loadProducts();
 
-  const handleAdjustmentSuccess = () => {
-    loadProducts();
-    if (isLotsModalOpen) {
-    }
-  };
+  // Si el modal de lotes está abierto, recarga los lotes internos
+  if (isLotsModalOpen) {
+    setLotsRefreshKey((prev) => prev + 1);
+  }
+};
+
+const handleAdjustmentSuccess = () => {
+  // Actualiza totales de producto
+  loadProducts();
+
+  // Recarga la tabla de lotes del modal
+  if (isLotsModalOpen) {
+    setLotsRefreshKey((prev) => prev + 1);
+  }
+};
+
 
   // Loading states
   if (authLoading) {
@@ -254,6 +265,8 @@ export default function ProductsPage() {
           onClose={() => setIsLotsModalOpen(false)}
           onCreateLot={handleCreateLot}
           onAdjustLot={handleAdjustLot}
+          refreshKey={lotsRefreshKey}   
+
         />
 
         {/* Formulario nuevo lote */}
