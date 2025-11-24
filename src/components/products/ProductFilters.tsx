@@ -78,8 +78,8 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
     <div className="space-y-4">
       {/* Barra de búsqueda principal */}
       <div className="flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="relative flex-1 bg-white  ">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground " />
           <Input
             placeholder="Buscar productos por nombre..."
             value={filters.search}
@@ -104,14 +104,14 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
 
       {/* Filtros expandidos */}
       {isExpanded && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/20 bg-white shadow-sm">
           <div className="space-y-2">
             <label className="text-sm font-medium">Categoría</label>
             <Select
               value={filters.category_id}
               onValueChange={(value) => updateFilter("category_id", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-[#f5f5f5] border border-gray text-back">
                 <SelectValue placeholder="Todas las categorías" />
               </SelectTrigger>
               <SelectContent>
@@ -134,7 +134,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
               value={filters.is_active}
               onValueChange={(value) => updateFilter("is_active", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-[#f5f5f5] border border-gray text-back">
                 <SelectValue placeholder="Todos los estados" />
               </SelectTrigger>
               <SelectContent>
@@ -151,7 +151,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
               value={filters.is_featured}
               onValueChange={(value) => updateFilter("is_featured", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-[#f5f5f5] border border-gray text-back">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>
@@ -168,7 +168,7 @@ export function ProductFilters({ onFiltersChange }: ProductFiltersProps) {
               value={filters.has_stock}
               onValueChange={(value) => updateFilter("has_stock", value)}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-[#f5f5f5] border border-gray text-back">
                 <SelectValue placeholder="Todos" />
               </SelectTrigger>
               <SelectContent>

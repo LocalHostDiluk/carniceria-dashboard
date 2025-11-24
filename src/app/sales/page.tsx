@@ -222,11 +222,11 @@ export default function SalesPage() {
       <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar productos..."
-              className="w-full pl-8"
+              className="w-full pl-10 bg-white shadow-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />

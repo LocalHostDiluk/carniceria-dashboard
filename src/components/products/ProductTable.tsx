@@ -113,7 +113,7 @@ export function ProductTable({
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="rounded-md border bg-white">
       <Table>
         <TableHeader>
           <TableRow>
@@ -130,7 +130,7 @@ export function ProductTable({
           {products.map((product) => (
             <TableRow key={product.product_id}>
               {/* Imagen */}
-              <TableCell>
+              <TableCell className="pl-6">
                 <Avatar className="h-10 w-10">
                   <AvatarImage
                     src={

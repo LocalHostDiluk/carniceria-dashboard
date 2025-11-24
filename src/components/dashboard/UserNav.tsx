@@ -32,9 +32,9 @@ export const UserNav = () => {
         <Button
           variant="secondary"
           size="icon"
-          className="rounded-full cursor-pointer"
+          className="rounded-full cursor-pointer bg-[#FFE5E8]  hover:bg-[#ffd4dc]"
         >
-          <CircleUser className="h-5 w-5" />
+          <CircleUser className=" h-9 w-9 text-[#b91c1c]" />
           <span className="sr-only">Toggle user menu</span>
         </Button>
       </DropdownMenuTrigger>

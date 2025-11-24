@@ -72,7 +72,7 @@ export const Header = () => {
 
   return (
     <>
-      <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+      <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[69px] lg:px-6">
         {/* Menú Hamburguesa para Móvil */}
         <Sheet>
           <SheetTrigger asChild>
@@ -119,16 +119,15 @@ export const Header = () => {
                 );
               })}
 
-              {/* Botón de cierre en el menú móvil - Solo para encargados */}
               {profile?.role === "encargado" && (
                 <>
                   <div className="border-t pt-4 mt-4">
                     <Button
-                      variant="secondary"
+                      variant="outline"
                       onClick={() => setShowCashModal(true)}
-                      className="w-full justify-start"
+                      className="w-full justify-start gap-2 border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
                     >
-                      <DollarSign className="h-5 w-5 mr-4" />
+                      <DollarSign className="h-5 w-5" />
                       Cerrar Caja
                     </Button>
                   </div>
@@ -151,15 +150,16 @@ export const Header = () => {
         {/* Botón de cierre de caja - Solo desktop y solo para encargados */}
         {profile?.role === "encargado" && (
           <Button
-            variant="secondary"
+            variant="outline"
             size="sm"
             onClick={() => setShowCashModal(true)}
-            className="hidden md:flex gap-2"
+            className="hidden md:flex gap-2  border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
           >
-            <DollarSign className="h-4 w-4" />
+            <DollarSign className="h-5 w-5" />
             Cerrar Caja
           </Button>
         )}
+
 
         {/* Menú de usuario */}
         <UserNav />

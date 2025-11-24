@@ -101,6 +101,7 @@ export function LotForm({ product, isOpen, onClose, onSuccess }: LotFormProps) {
       toast.success("Lote creado exitosamente");
       onSuccess();
       onClose();
+      
     } catch (error: any) {
       toast.error(error.message || "Error al crear el lote");
     } finally {
@@ -166,7 +167,7 @@ export function LotForm({ product, isOpen, onClose, onSuccess }: LotFormProps) {
                 {...register("purchase_price", {
                   required: "El precio de compra es requerido",
                   min: {
-                    value: 0,
+                    value: 0.01,
                     message: "El precio debe ser mayor o igual a 0",
                   },
                 })}

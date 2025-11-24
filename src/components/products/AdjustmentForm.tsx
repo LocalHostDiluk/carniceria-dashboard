@@ -38,14 +38,14 @@ interface FormData {
   custom_reason: string;
 }
 
-const PREDEFINED_REASONS = {
-  decrease: [
-    { value: "merma", label: "Merma (Deterioro)" },
-    { value: "caducado", label: "Producto Caducado" },
-    { value: "daño", label: "Daño/Rotura" },
-  ],
-  increase: [{ value: "ajuste manual", label: "Ajuste manual" }],
-} as const;
+// Razones SOLO para DISMINUIR
+const DECREASE_REASONS = [
+  { value: "merma", label: "Merma (Deterioro)" },
+  { value: "caducado", label: "Producto Caducado" },
+  { value: "daño", label: "Daño/Rotura" },
+  { value: "ajuste manual", label: "Ajuste manual" },
+  { value: "custom", label: "Personalizada (escribir motivo)" },
+] as const;
 
 export function AdjustmentForm({
   lot,
@@ -71,9 +71,9 @@ export function AdjustmentForm({
     },
   });
 
-  const adjustmentType = watch("adjustment_type") || "decrease"; // ✅ CORRECCIÓN: Default fallback
+  const adjustmentType = watch("adjustment_type") || "decrease";
   const selectedReason = watch("reason");
-  const quantity = watch("quantity") || 0; // ✅ CORRECCIÓN: Default fallback
+  const quantity = watch("quantity") || 0;
 
   // Reset form cuando se abre
   useEffect(() => {
@@ -90,16 +90,54 @@ export function AdjustmentForm({
   const onSubmit = async (data: FormData) => {
     if (!lot) return;
 
+    // Validar cantidad
+    if (!data.quantity || data.quantity <= 0) {
+      toast.error("La cantidad debe ser mayor a 0.");
+      return;
+    }
+
+    const roundedQty = Number(data.quantity.toFixed(2));
+
+    // No reducir más del stock disponible
+    if (data.adjustment_type === "decrease" && roundedQty > lot.stock_quantity) {
+      toast.error(
+        `No puedes reducir más del stock disponible. Stock actual: ${lot.stock_quantity}`
+      );
+      return;
+    }
+
+    // Determinar razón final
+    let finalReason = "";
+
+    if (data.adjustment_type === "increase") {
+      // AUMENTAR → sólo texto manual
+      if (!data.custom_reason || data.custom_reason.trim() === "") {
+        toast.error("Debes escribir la razón del aumento de stock.");
+        return;
+      }
+      finalReason = data.custom_reason.trim();
+    } else {
+      // DISMINUIR → select + opcional personalizada
+      if (!data.reason) {
+        toast.error("Debes seleccionar una razón para el ajuste.");
+        return;
+      }
+
+      if (data.reason === "custom") {
+        if (!data.custom_reason || data.custom_reason.trim() === "") {
+          toast.error("Debes especificar la razón personalizada.");
+          return;
+        }
+        finalReason = data.custom_reason.trim();
+      } else {
+        finalReason = data.reason;
+      }
+    }
+
     setIsLoading(true);
     try {
-      // Calcular cantidad con signo correcto
       const adjustmentQuantity =
-        data.adjustment_type === "decrease"
-          ? -Math.abs(data.quantity)
-          : Math.abs(data.quantity);
-
-      // Determinar la razón final
-      const finalReason = data.reason;
+        data.adjustment_type === "decrease" ? -roundedQty : roundedQty;
 
       await lotService.adjustLot(lot.lot_id, adjustmentQuantity, finalReason);
 
@@ -107,7 +145,7 @@ export function AdjustmentForm({
       onSuccess();
       onClose();
     } catch (error: any) {
-      toast.error(error.message || "Error al registrar el ajuste");
+      toast.error(error?.message || "Error al registrar el ajuste");
     } finally {
       setIsLoading(false);
     }
@@ -120,10 +158,6 @@ export function AdjustmentForm({
     adjustmentType === "decrease"
       ? lot.stock_quantity - quantity
       : lot.stock_quantity + quantity;
-
-  // ✅ CORRECCIÓN: Verificar que adjustmentType existe antes de hacer map
-  const reasonOptions =
-    PREDEFINED_REASONS[adjustmentType] || PREDEFINED_REASONS.decrease;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -149,7 +183,8 @@ export function AdjustmentForm({
                 variant={adjustmentType === "decrease" ? "default" : "outline"}
                 onClick={() => {
                   setValue("adjustment_type", "decrease");
-                  setValue("reason", "merma"); // Reset reason cuando cambia tipo
+                  setValue("reason", "merma");
+                  setValue("custom_reason", "");
                 }}
                 className="gap-2"
               >
@@ -161,7 +196,9 @@ export function AdjustmentForm({
                 variant={adjustmentType === "increase" ? "default" : "outline"}
                 onClick={() => {
                   setValue("adjustment_type", "increase");
-                  setValue("reason", "ajuste manual"); // Reset reason cuando cambia tipo
+                  // Para aumentar ignoramos el select, sólo usamos custom_reason
+                  setValue("reason", "");
+                  setValue("custom_reason", "");
                 }}
                 className="gap-2"
               >
@@ -182,6 +219,7 @@ export function AdjustmentForm({
               type="number"
               step="0.01"
               {...register("quantity", {
+                valueAsNumber: true,
                 required: "La cantidad es requerida",
                 min: { value: 0.01, message: "La cantidad debe ser mayor a 0" },
                 max:
@@ -207,40 +245,51 @@ export function AdjustmentForm({
             </div>
           </div>
 
-          {/* Razón */}
-          <div className="space-y-2">
-            <Label htmlFor="reason">Razón del Ajuste *</Label>
-            <Select
-              value={watch("reason") || reasonOptions[0]?.value}
-              onValueChange={(value) => setValue("reason", value)}
-              disabled={isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccionar razón" />
-              </SelectTrigger>
-              <SelectContent>
-                {reasonOptions.map((reason) => (
-                  <SelectItem key={reason.value} value={reason.value}>
-                    {reason.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Razón para DISMINUIR: select + opcional personalizada */}
+          {adjustmentType === "decrease" && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="reason">Razón del Ajuste *</Label>
+                <Select
+                  value={selectedReason || DECREASE_REASONS[0].value}
+                  onValueChange={(value) => setValue("reason", value)}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar razón" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DECREASE_REASONS.map((reason) => (
+                      <SelectItem key={reason.value} value={reason.value}>
+                        {reason.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-          {/* Campo para razón personalizada */}
-          {selectedReason === "custom" && (
+              {selectedReason === "custom" && (
+                <div className="space-y-2">
+                  <Label htmlFor="custom_reason">Especificar Razón *</Label>
+                  <Textarea
+                    id="custom_reason"
+                    placeholder="Describe la razón del ajuste..."
+                    {...register("custom_reason")}
+                    disabled={isLoading}
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Razón para AUMENTAR: sólo texto */}
+          {adjustmentType === "increase" && (
             <div className="space-y-2">
-              <Label htmlFor="custom_reason">Especificar Razón *</Label>
+              <Label htmlFor="custom_reason">Razón del Aumento *</Label>
               <Textarea
                 id="custom_reason"
-                placeholder="Describe la razón del ajuste..."
-                {...register("custom_reason", {
-                  required:
-                    selectedReason === "custom"
-                      ? "La razón personalizada es requerida"
-                      : false,
-                })}
+                placeholder="Escribe la razón por la que deseas aumentar el stock..."
+                {...register("custom_reason")}
                 disabled={isLoading}
               />
               {errors.custom_reason && (

@@ -88,25 +88,27 @@ export class LotService {
 
   // Ajustar inventario
   async adjustLot(
-    lotId: string,
-    quantity: number,
-    reason: string
-  ): Promise<void> {
-    try {
-      
-      const { error } = await supabase.rpc("adjust_inventory_lot", {
-        p_lot_id: lotId,
-        p_quantity: quantity,
-        p_reason: reason,
-      });
+  lotId: string,
+  quantity: number,
+  reason: string
+): Promise<void> {
+  try {
+    const roundedQuantity = Number(quantity.toFixed(2));
 
-      if (error) throw error;
-    } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error adjusting lot:", appError);
-      throw appError;
-    }
+    const { error } = await supabase.rpc("adjust_inventory_lot", {
+      p_lot_id: lotId,
+      p_quantity: quantity,   
+      p_reason: reason,
+    });
+
+    if (error) throw error;
+  } catch (error) {
+    const appError = ErrorHandler.fromSupabaseError(error);
+    console.error("Error adjusting lot:", appError);
+    throw appError;
   }
+}
+
 
   // Obtener historial de ajustes
   async getAdjustments(
