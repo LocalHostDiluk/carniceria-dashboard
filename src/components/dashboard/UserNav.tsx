@@ -12,17 +12,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/navigation";
 
 export const UserNav = () => {
-  const { profile, logout } = useUser();
+  const router = useRouter();
+    const { profile, logout } = useUser();
 
   const handleLogout = async () => {
     try {
       await logout();
-      toast.success("Sesión cerrada correctamente");
-    } catch (error) {
-      toast.error("Error al cerrar sesión");
-      console.error("Error al cerrar sesión:", error);
+      toast.success("Has cerrado sesión exitosamente.");
+      router.push("/login");
+    } catch (error: any) {
+      toast.error("Error al cerrar sesión", { 
+        description: error.message 
+      });
     }
   };
 

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, createContext, useContext, useMemo, useCallback } from "react";
+import { useEffect, useState, createContext, useContext, useMemo, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
@@ -35,8 +35,9 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const initializingRef = useRef(false);
 
-  // Cargar perfil del usuario desde user_profiles
+  // Cargar perfil del usuario
   const loadUserProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -46,24 +47,34 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
         .single();
 
       if (error) {
-        console.error("Error loading user profile:", error);
-        setProfile(null);
-        return;
+        console.error("Error loading profile:", error);
+        return null;
       }
 
-      setProfile(data as UserProfile);
+      return data as UserProfile;
     } catch (error) {
-      console.error("Error in loadUserProfile:", error);
-      setProfile(null);
+      console.error("Exception loading profile:", error);
+      return null;
     }
   }, []);
 
   useEffect(() => {
-    // Verificar sesión inicial
+    // Evitar múltiples inicializaciones
+    if (initializingRef.current) return;
+    initializingRef.current = true;
+
     const initializeUser = async () => {
       try {
+        // Timeout de seguridad de 5 segundos
+        const timeoutId = setTimeout(() => {
+          console.warn('⏱️ Session check timeout, forcing loading to false');
+          setIsLoading(false);
+        }, 5000);
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
+        clearTimeout(timeoutId);
+
         if (error) {
           console.error("Session error:", error);
           setUser(null);
@@ -72,13 +83,16 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
           return;
         }
 
-        setUser(session?.user ?? null);
-
         if (session?.user) {
-          await loadUserProfile(session.user.id);
+          setUser(session.user);
+          const userProfile = await loadUserProfile(session.user.id);
+          setProfile(userProfile);
+        } else {
+          setUser(null);
+          setProfile(null);
         }
       } catch (error) {
-        console.error("Error initializing user:", error);
+        console.error("Init error:", error);
         setUser(null);
         setProfile(null);
       } finally {
@@ -88,17 +102,20 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
 
     initializeUser();
 
-    // Escuchar cambios de autenticación
+    // Listener de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('🔐 Auth event:', event);
-        
-        setUser(session?.user ?? null);
 
-        if (session?.user) {
-          await loadUserProfile(session.user.id);
-        } else {
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user);
+          const userProfile = await loadUserProfile(session.user.id);
+          setProfile(userProfile);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
           setProfile(null);
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          setUser(session.user);
         }
         
         setIsLoading(false);
@@ -107,40 +124,40 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
 
     return () => {
       subscription.unsubscribe();
+      initializingRef.current = false;
     };
   }, [loadUserProfile]);
 
-  // Función de login
   const login = useCallback(async (email: string, password: string): Promise<void> => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (error) {
-      throw new Error("Credenciales inválidas");
-    }
+      if (error) throw new Error("Credenciales inválidas");
+      if (!data.user) throw new Error("Error al iniciar sesión");
 
-    if (!data.user) {
-      throw new Error("Error al iniciar sesión");
+      // El state se actualiza automáticamente por onAuthStateChange
+    } catch (error) {
+      setIsLoading(false);
+      throw error;
     }
   }, []);
 
-  // Función de logout
   const logout = useCallback(async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
-      setProfile(null);
     } catch (error) {
-      console.error("Error in logout:", error);
-      // Forzar limpieza incluso si hay error
+      console.error("Logout error:", error);
+    } finally {
+      // Siempre limpiar el estado
       setUser(null);
       setProfile(null);
     }
   }, []);
 
-  // Validar credenciales de encargado (para cierre de caja)
   const validateManager = useCallback(async (
     email: string,
     password: string
@@ -153,9 +170,7 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
         password,
       });
 
-      if (error || !data.user) {
-        return false;
-      }
+      if (error || !data.user) return false;
 
       const { data: profileData } = await supabase
         .from("user_profiles")
@@ -165,7 +180,6 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
 
       const isManager = profileData?.role === "encargado";
       
-      // Restaurar sesión original si era diferente
       if (currentSession && currentSession.user.id !== data.user.id) {
         await supabase.auth.setSession({
           access_token: currentSession.access_token,

@@ -1,6 +1,5 @@
 "use client";
 import {
-  CircleUser,
   Home,
   LineChart,
   Menu,
@@ -10,16 +9,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { supabase } from "@/lib/supabaseClient";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
   Sheet,
@@ -35,23 +25,10 @@ import { CashClosureModal } from "@/components/cash/CashClosureModal";
 import { useUser } from "@/hooks/useUser";
 
 export const Header = () => {
-  const router = useRouter();
   const pathname = usePathname();
-  const { profile } = useUser();
+  const { profile} = useUser();
 
-  // Estado para el modal de cierre
   const [showCashModal, setShowCashModal] = useState(false);
-
-  const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast.error("Error al cerrar sesión", { description: error.message });
-    } else {
-      toast.success("Has cerrado sesión exitosamente.");
-      router.push("/login");
-    }
-  };
 
   const navLinks = [
     { href: "/", label: "Dashboard", icon: Home },
@@ -64,7 +41,6 @@ export const Header = () => {
     toast.success("🎉 Caja cerrada exitosamente", {
       description: "El cierre se ha registrado correctamente",
     });
-    // Opcional: Refrescar datos del dashboard si estamos en la página principal
     if (pathname === "/") {
       window.location.reload();
     }
@@ -73,7 +49,6 @@ export const Header = () => {
   return (
     <>
       <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[69px] lg:px-6">
-        {/* Menú Hamburguesa para Móvil */}
         <Sheet>
           <SheetTrigger asChild>
             <Button
@@ -120,24 +95,21 @@ export const Header = () => {
               })}
 
               {profile?.role === "encargado" && (
-                <>
-                  <div className="border-t pt-4 mt-4">
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowCashModal(true)}
-                      className="w-full justify-start gap-2 border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
-                    >
-                      <DollarSign className="h-5 w-5" />
-                      Cerrar Caja
-                    </Button>
-                  </div>
-                </>
+                <div className="border-t pt-4 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowCashModal(true)}
+                    className="w-full justify-start gap-2 border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+                  >
+                    <DollarSign className="h-5 w-5" />
+                    Cerrar Caja
+                  </Button>
+                </div>
               )}
             </nav>
           </SheetContent>
         </Sheet>
 
-        {/* Título/Breadcrumb */}
         <div className="w-full flex-1">
           <h1 className="text-lg font-semibold md:text-2xl">
             {pathname === "/" && "Dashboard"}
@@ -147,25 +119,21 @@ export const Header = () => {
           </h1>
         </div>
 
-        {/* Botón de cierre de caja - Solo desktop y solo para encargados */}
         {profile?.role === "encargado" && (
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowCashModal(true)}
-            className="hidden md:flex gap-2  border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
+            className="hidden md:flex gap-2 border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800"
           >
             <DollarSign className="h-5 w-5" />
             Cerrar Caja
           </Button>
         )}
 
-
-        {/* Menú de usuario */}
         <UserNav />
       </header>
 
-      {/* Modal de cierre de caja */}
       <CashClosureModal
         open={showCashModal}
         onOpenChange={setShowCashModal}
