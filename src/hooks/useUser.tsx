@@ -3,7 +3,6 @@ import { useEffect, useState, createContext, useContext, useMemo, useCallback } 
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
-// Ahora usamos user_profiles en lugar de users
 export type UserRole = "empleado" | "encargado";
 
 export interface UserProfile {
@@ -37,77 +36,8 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Verificar sesión inicial
-    const initializeUser = async () => {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-
-        if (session?.user) {
-          await loadUserProfile(session.user.id);
-        }
-      } catch (error) {
-        console.error("Error initializing user:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    initializeUser();
-
-    // Escuchar cambios de autenticación
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await loadUserProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
-      setIsLoading(false);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Handle page visibility changes - reload page when tab becomes active
-  // This is a workaround for Supabase Auth hanging issues
-  useEffect(() => {
-    let wasHidden = false;
-    
-    console.log('🔧 Visibility change listener registered');
-
-    const handleVisibilityChange = () => {
-      console.log('👁️ Visibility changed. State:', document.visibilityState);
-      
-      if (document.visibilityState === 'hidden' && user) {
-        console.log('⚠️ Tab hidden, marking for reload on return');
-        wasHidden = true;
-      } else if (document.visibilityState === 'visible' && wasHidden && user) {
-        console.log('✅ Tab visible again after being hidden, reloading page...');
-        // Reload the page to force Supabase to re-initialize
-        window.location.reload();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    console.log('📋 Event listener attached to document');
-
-    return () => {
-      console.log('🧹 Cleaning up visibility change listener');
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [user]);
-
   // Cargar perfil del usuario desde user_profiles
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("user_profiles")
@@ -126,7 +56,59 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
       console.error("Error in loadUserProfile:", error);
       setProfile(null);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Verificar sesión inicial
+    const initializeUser = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Session error:", error);
+          setUser(null);
+          setProfile(null);
+          setIsLoading(false);
+          return;
+        }
+
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await loadUserProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error("Error initializing user:", error);
+        setUser(null);
+        setProfile(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeUser();
+
+    // Escuchar cambios de autenticación
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔐 Auth event:', event);
+        
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await loadUserProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [loadUserProfile]);
 
   // Función de login
   const login = useCallback(async (email: string, password: string): Promise<void> => {
@@ -142,15 +124,19 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
     if (!data.user) {
       throw new Error("Error al iniciar sesión");
     }
-
-    // El perfil se carga automáticamente por el listener
   }, []);
 
   // Función de logout
   const logout = useCallback(async (): Promise<void> => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      throw new Error("Error al cerrar sesión");
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setProfile(null);
+    } catch (error) {
+      console.error("Error in logout:", error);
+      // Forzar limpieza incluso si hay error
+      setUser(null);
+      setProfile(null);
     }
   }, []);
 
@@ -160,7 +146,8 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
     password: string
   ): Promise<boolean> => {
     try {
-      // Hacer login temporal para validar
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -170,14 +157,23 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
         return false;
       }
 
-      // Verificar si es encargado
       const { data: profileData } = await supabase
         .from("user_profiles")
         .select("role")
         .eq("id", data.user.id)
         .single();
 
-      return profileData?.role === "encargado";
+      const isManager = profileData?.role === "encargado";
+      
+      // Restaurar sesión original si era diferente
+      if (currentSession && currentSession.user.id !== data.user.id) {
+        await supabase.auth.setSession({
+          access_token: currentSession.access_token,
+          refresh_token: currentSession.refresh_token,
+        });
+      }
+
+      return isManager;
     } catch {
       return false;
     }
