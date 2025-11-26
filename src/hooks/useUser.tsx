@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, createContext, useContext, useMemo } from "react";
+import { useEffect, useState, createContext, useContext, useMemo, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
@@ -77,6 +77,35 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
     };
   }, []);
 
+  // Handle page visibility changes - reload page when tab becomes active
+  // This is a workaround for Supabase Auth hanging issues
+  useEffect(() => {
+    let wasHidden = false;
+    
+    console.log('🔧 Visibility change listener registered');
+
+    const handleVisibilityChange = () => {
+      console.log('👁️ Visibility changed. State:', document.visibilityState);
+      
+      if (document.visibilityState === 'hidden' && user) {
+        console.log('⚠️ Tab hidden, marking for reload on return');
+        wasHidden = true;
+      } else if (document.visibilityState === 'visible' && wasHidden && user) {
+        console.log('✅ Tab visible again after being hidden, reloading page...');
+        // Reload the page to force Supabase to re-initialize
+        window.location.reload();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    console.log('📋 Event listener attached to document');
+
+    return () => {
+      console.log('🧹 Cleaning up visibility change listener');
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
+
   // Cargar perfil del usuario desde user_profiles
   const loadUserProfile = async (userId: string) => {
     try {
@@ -100,7 +129,7 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
   };
 
   // Función de login
-  const login = async (email: string, password: string): Promise<void> => {
+  const login = useCallback(async (email: string, password: string): Promise<void> => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -115,18 +144,18 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
     }
 
     // El perfil se carga automáticamente por el listener
-  };
+  }, []);
 
   // Función de logout
-  const logout = async (): Promise<void> => {
+  const logout = useCallback(async (): Promise<void> => {
     const { error } = await supabase.auth.signOut();
     if (error) {
       throw new Error("Error al cerrar sesión");
     }
-  };
+  }, []);
 
   // Validar credenciales de encargado (para cierre de caja)
-  const validateManager = async (
+  const validateManager = useCallback(async (
     email: string,
     password: string
   ): Promise<boolean> => {
@@ -152,7 +181,7 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
     } catch {
       return false;
     }
-  };
+  }, []);
 
   const value: UserContextType = useMemo(
     () => ({
@@ -163,7 +192,7 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
       logout,
       validateManager,
     }),
-    [user, profile, isLoading]
+    [user, profile, isLoading, login, logout, validateManager]
   );
 
   return <UserContext.Provider value={value} {...props} />;
