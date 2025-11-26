@@ -118,11 +118,16 @@ export class ErrorHandler {
         );
       }
 
-      if (error.message?.includes("JWT")) {
+      if (
+        error.message?.includes("JWT") ||
+        error.message?.includes("Invalid Refresh Token") ||
+        error.message?.includes("Refresh Token Not Found") ||
+        error.code === "401"
+      ) {
         return this.createError(
           ErrorType.AUTHENTICATION,
           "Tu sesión ha expirado. Por favor inicia sesión nuevamente",
-          "JWT_EXPIRED",
+          "AUTH_ERROR",
           error,
           false
         );

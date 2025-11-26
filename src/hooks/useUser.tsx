@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, createContext, useContext } from "react";
+import { useEffect, useState, createContext, useContext, useMemo } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import type { User } from "@supabase/supabase-js";
 
@@ -154,14 +154,17 @@ export const UserContextProvider = (props: { children: React.ReactNode }) => {
     }
   };
 
-  const value: UserContextType = {
-    user,
-    profile,
-    isLoading,
-    login,
-    logout,
-    validateManager,
-  };
+  const value: UserContextType = useMemo(
+    () => ({
+      user,
+      profile,
+      isLoading,
+      login,
+      logout,
+      validateManager,
+    }),
+    [user, profile, isLoading]
+  );
 
   return <UserContext.Provider value={value} {...props} />;
 };

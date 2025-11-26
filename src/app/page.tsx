@@ -1,58 +1,52 @@
 // src/app/page.tsx
 "use client";
-import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Package, CreditCard, AlertCircle } from "lucide-react";
 import {
   fetchDashboardKpis,
-  type DashboardKpis,
   fetchDailySales,
-  type DailySale,
 } from "@/services/dashboardService";
 import { KpiCardSkeleton } from "@/components/dashboard/KpiCardSkeleton";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { ChartSkeleton } from "@/components/dashboard/ChartSkeleton";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import useSWR from "swr";
 
 export default function HomePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
-  const [kpis, setKpis] = useState<DashboardKpis | null>(null);
-  const [salesData, setSalesData] = useState<DailySale[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        setIsLoading(true);
-        const [kpisData, dailySalesData] = await Promise.all([
-          fetchDashboardKpis(),
-          fetchDailySales(),
-        ]);
-        setKpis(kpisData);
-        setSalesData(dailySalesData);
-      } catch (error) {
-        console.error("Failed to load dashboard data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    // Solo cargar datos SI está autenticado
-    if (isAuthenticated) {
-      loadDashboardData();
+  // Use SWR for fetching KPIs
+  const { data: kpis, isLoading: kpisLoading } = useSWR(
+    isAuthenticated ? "dashboard-kpis" : null,
+    fetchDashboardKpis,
+    {
+      revalidateOnFocus: true, // Revalidate when window gets focus
+      dedupingInterval: 5000, // Dedupe requests within 5 seconds
     }
-  }, [isAuthenticated]); // Depende de isAuthenticated
+  );
+
+  // Use SWR for fetching sales data
+  const { data: salesData, isLoading: salesLoading } = useSWR(
+    isAuthenticated ? "dashboard-sales" : null,
+    fetchDailySales,
+    {
+      revalidateOnFocus: true,
+      dedupingInterval: 5000,
+    }
+  );
 
   if (authLoading) {
     return <div className="p-4">Verificando sesión...</div>;
   }
 
   if (!isAuthenticated) {
-    return null; // Se está redirigiendo
+    return null; // Redirecting
   }
 
-  // ✅ Formatters (pueden ir donde quieras)
+  const isLoading = kpisLoading || salesLoading;
+
+  // ✅ Formatters
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -67,7 +61,7 @@ export default function HomePage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        {isLoading ? (
+        {isLoading && !kpis ? (
           <>
             <KpiCardSkeleton />
             <KpiCardSkeleton />
@@ -136,7 +130,11 @@ export default function HomePage() {
       </div>
 
       <div className="grid gap-4 md:gap-8 lg:grid-cols-1 mt-8">
-        {isLoading ? <ChartSkeleton /> : <SalesChart data={salesData} />}
+        {isLoading && !salesData ? (
+          <ChartSkeleton />
+        ) : (
+          <SalesChart data={salesData || []} />
+        )}
       </div>
     </DashboardLayout>
   );

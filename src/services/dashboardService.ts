@@ -1,5 +1,6 @@
 // src/services/dashboardService.ts
 import { supabase } from "@/lib/supabaseClient";
+import { ErrorHandler } from "@/lib/errorHandler";
 
 export interface DashboardKpis {
   total_sales_today: number;
@@ -13,8 +14,7 @@ export const fetchDashboardKpis = async (): Promise<DashboardKpis> => {
   const { data, error } = await supabase.rpc("get_dashboard_kpis");
 
   if (error) {
-    console.error("Error fetching dashboard KPIs:", error);
-    throw new Error("No se pudieron cargar las métricas del dashboard.");
+    throw ErrorHandler.fromSupabaseError(error);
   }
 
   // La función devuelve un array, tomamos el primer (y único) resultado
@@ -30,8 +30,7 @@ export const fetchDailySales = async (): Promise<DailySale[]> => {
   const { data, error } = await supabase.rpc("get_daily_sales_last_7_days");
 
   if (error) {
-    console.error("Error fetching daily sales:", error);
-    throw new Error("No se pudieron cargar los datos de ventas.");
+    throw ErrorHandler.fromSupabaseError(error);
   }
   return data;
 };
