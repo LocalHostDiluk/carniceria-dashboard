@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DataPagination } from "@/components/ui/data-pagination"; // ✅ AGREGAR
 import {
   ChevronDown,
   ChevronRight,
@@ -24,6 +25,10 @@ export function SalesHistoryTable({
 }: SalesHistoryTableProps) {
   const [expandedSale, setExpandedSale] = useState<string | null>(null);
 
+  // ✅ ESTADOS DE PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const formatCurrency = (amount: number) =>
     `$${amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
@@ -43,6 +48,14 @@ export function SalesHistoryTable({
   const toggleExpand = (saleId: string) => {
     setExpandedSale(expandedSale === saleId ? null : saleId);
   };
+
+  // ✅ PAGINACIÓN
+  const totalItems = sales.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedSales = sales.slice(startIndex, endIndex);
+  const totalSales = sales.reduce((sum, sale) => sum + sale.total_amount, 0);
 
   if (isLoading) {
     return (
@@ -83,8 +96,6 @@ export function SalesHistoryTable({
     );
   }
 
-  const totalSales = sales.reduce((sum, sale) => sum + sale.total_amount, 0);
-
   return (
     <Card>
       <CardHeader>
@@ -100,7 +111,8 @@ export function SalesHistoryTable({
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {sales.map((sale) => (
+          {/* ✅ USAR paginatedSales EN LUGAR DE sales */}
+          {paginatedSales.map((sale) => (
             <div key={sale.sale_id} className="border rounded-lg">
               {/* Resumen de la venta */}
               <div className="p-4 hover:bg-muted/50 transition-colors">
@@ -185,6 +197,22 @@ export function SalesHistoryTable({
             </div>
           ))}
         </div>
+
+        {/* ✅ PAGINACIÓN */}
+        {totalPages > 0 && (
+          <DataPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
+        )}
       </CardContent>
     </Card>
   );

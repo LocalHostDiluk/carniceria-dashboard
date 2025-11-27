@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Receipt, User, Clock } from "lucide-react";
+import { DataPagination } from "@/components/ui/data-pagination"; // ✅ AGREGAR
 import type { ExpenseRecord } from "@/types/reports";
 import {
   expenseCategories,
@@ -18,6 +20,10 @@ export function ExpensesHistoryTable({
   expenses,
   isLoading,
 }: ExpensesHistoryTableProps) {
+  // ✅ ESTADOS DE PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
   const formatCurrency = (amount: number) =>
     `$${amount.toLocaleString("es-MX", { minimumFractionDigits: 2 })}`;
 
@@ -42,6 +48,17 @@ export function ExpensesHistoryTable({
         return "bg-gray-100 text-gray-700";
     }
   };
+
+  // ✅ PAGINACIÓN
+  const totalItems = expenses.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedExpenses = expenses.slice(startIndex, endIndex);
+  const totalExpenses = expenses.reduce(
+    (sum, expense) => sum + expense.amount,
+    0
+  );
 
   if (isLoading) {
     return (
@@ -82,11 +99,6 @@ export function ExpensesHistoryTable({
     );
   }
 
-  const totalExpenses = expenses.reduce(
-    (sum, expense) => sum + expense.amount,
-    0
-  );
-
   return (
     <Card>
       <CardHeader>
@@ -102,7 +114,8 @@ export function ExpensesHistoryTable({
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {expenses.map((expense) => {
+          {/* ✅ USAR paginatedExpenses EN LUGAR DE expenses */}
+          {paginatedExpenses.map((expense) => {
             const categoryConfig = getCategoryConfig(expense.category);
 
             return (
@@ -156,6 +169,22 @@ export function ExpensesHistoryTable({
             );
           })}
         </div>
+
+        {/* ✅ PAGINACIÓN */}
+        {totalPages > 0 && (
+          <DataPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={totalItems}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              setCurrentPage(1);
+            }}
+            pageSizeOptions={[5, 10, 20, 50]}
+          />
+        )}
       </CardContent>
     </Card>
   );

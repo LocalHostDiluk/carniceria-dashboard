@@ -5,8 +5,10 @@ import { Plus } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card"; // ✅ AGREGAR
 import { ProductTable } from "@/components/products/ProductTable";
 import { ProductForm } from "@/components/products/ProductForm";
+import { DataPagination } from "@/components/ui/data-pagination"; // ✅ AGREGAR
 import { productService } from "@/services/productService";
 import type { Product, InventoryLot } from "@/types/models";
 import { toast } from "sonner";
@@ -27,6 +29,11 @@ export default function ProductsPage() {
     is_featured: "",
     has_stock: "",
   });
+
+  // ✅ ESTADOS DE PAGINACIÓN
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+
   const [isLotsModalOpen, setIsLotsModalOpen] = useState(false);
   const [selectedProductForLots, setSelectedProductForLots] =
     useState<Product | null>(null);
@@ -48,7 +55,6 @@ export default function ProductsPage() {
       setIsLoading(true);
       const data = await productService.getProducts();
       setProducts(data);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Error al cargar productos");
     } finally {
@@ -114,7 +120,15 @@ export default function ProductsPage() {
 
   useEffect(() => {
     setFilteredProducts(applyFilters);
+    setCurrentPage(1); // ✅ Resetear a página 1 cuando cambien los filtros
   }, [applyFilters]);
+
+  // ✅ PAGINACIÓN
+  const totalItems = filteredProducts.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
 
   // Handlers
   const handleCreateProduct = () => {
@@ -156,23 +170,27 @@ export default function ProductsPage() {
   };
 
   const handleLotFormSuccess = () => {
-    // Actualiza totales de producto (cards y tabla principal)
     loadProducts();
-
-    // Si el modal de lotes está abierto, recarga los lotes internos
     if (isLotsModalOpen) {
       setLotsRefreshKey((prev) => prev + 1);
     }
   };
 
   const handleAdjustmentSuccess = () => {
-    // Actualiza totales de producto
     loadProducts();
-
-    // Recarga la tabla de lotes del modal
     if (isLotsModalOpen) {
       setLotsRefreshKey((prev) => prev + 1);
     }
+  };
+
+  // ✅ HANDLERS DE PAGINACIÓN
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
   };
 
   // Loading states
@@ -190,7 +208,7 @@ export default function ProductsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">🏷️ Productos</h1>
+            <h1 className="text-3xl font-bold">Productos</h1>
             <p className="text-muted-foreground">
               Gestiona tu catálogo de productos
             </p>
@@ -240,15 +258,29 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Tabla de productos */}
-        <ProductTable
-          products={filteredProducts}
-          isLoading={isLoading}
-          onEdit={handleEditProduct}
-          onViewLots={handleViewLots}
-          onCreateLot={handleCreateLot}
-          onRefresh={loadProducts}
-        />
+        <Card>
+          <CardContent className="p-0">
+            <ProductTable
+              products={paginatedProducts}
+              isLoading={isLoading}
+              onEdit={handleEditProduct}
+              onViewLots={handleViewLots}
+              onCreateLot={handleCreateLot}
+              onRefresh={loadProducts}
+            />
+
+            {!isLoading && totalPages > 0 && (
+              <DataPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                pageSize={pageSize}
+                totalItems={totalItems}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+              />
+            )}
+          </CardContent>
+        </Card>
 
         {/* Modales y Formulario */}
         <ProductForm
@@ -267,7 +299,6 @@ export default function ProductsPage() {
           refreshKey={lotsRefreshKey}
         />
 
-        {/* Formulario nuevo lote */}
         <LotForm
           product={selectedProductForNewLot}
           isOpen={isLotFormOpen}
@@ -275,7 +306,6 @@ export default function ProductsPage() {
           onSuccess={handleLotFormSuccess}
         />
 
-        {/* Formulario ajuste */}
         <AdjustmentForm
           lot={selectedLotForAdjustment}
           isOpen={isAdjustmentFormOpen}

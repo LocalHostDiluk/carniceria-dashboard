@@ -3,14 +3,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Package, ShoppingCart, LineChart, Tags } from "lucide-react";
+import { Home, Package, ShoppingCart, LineChart, Tags, Settings, BookCheck } from "lucide-react";
 import Image from "next/image";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
+  { href: "/sales", label: "Ventas", icon: ShoppingCart },
   { href: "/inventory", label: "Inventario", icon: Package },
   { href: "/products", label: "Productos", icon: Tags },
-  { href: "/sales", label: "Ventas", icon: ShoppingCart },
+  { href: "/settings", label: "Categorias/Proveedores", icon: BookCheck },
   { href: "/reports", label: "Reportes", icon: LineChart },
 ];
 
@@ -20,7 +21,6 @@ export const Sidebar = () => {
   return (
     <div className="hidden border-r bg-white md:block">
       <div className="flex h-full max-h-screen flex-col gap-3">
-        {/* Logo */}
         <div className="flex h-14 items-center border-b px-4 lg:h-[69px] lg:px-6 overflow-hidden">
           <Link href="/" className="flex items-center gap-5">
             <Image
@@ -41,8 +41,7 @@ export const Sidebar = () => {
             </div>
           </Link>
         </div>
-
-        {/* Menú */}
+        
         <div className="flex-1 py-4">
           <nav className="flex flex-col gap-2 px-2 text-sm font-medium lg:px-4">
             {navItems.map(({ href, label, icon: Icon }) => {

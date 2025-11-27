@@ -26,28 +26,6 @@
 
 ### 📊 Reportes
 
-- Corregir la obtención de datos
 - Creación de gráficas
-- Historial ventas/gastos
-- Creación de reportes
-
----
-
-## 📍 Detalles por Módulo
-
-### 📦 Pantalla de Inventario
-
-**Faltante:**
-
-- ➕ Agregar productos (individual y carga por lotes)
-- ✏️ Actualizar productos (con opción de marcar como destacado)
-- 🔁 Activar / desactivar productos (`active: true/false`)
-- 🗑️ Eliminar productos
-- 🎨 Posible mejora del diseño (paginación, tabla optimizada o reordenamiento visual)
-
-## 🎯 Objetivo General de Siguientes Entregables
-
-- Finalizar inventario para tener CRUD completo y funcional
-- Añadir administración de usuario para control interno del sistema
 
 ---

@@ -57,7 +57,7 @@ export default function HomePage() {
   return (
     <DashboardLayout>
       <div className="flex items-center">
-        <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
+        <h1 className="text-3xl font-bold">Dashboard</h1>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">

@@ -6,6 +6,8 @@ import {
   Package,
   ShoppingCart,
   DollarSign,
+  BookCheck,
+  Tags,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -35,6 +37,8 @@ export const Header = () => {
     { href: "/inventory", label: "Inventario", icon: Package },
     { href: "/sales", label: "Ventas", icon: ShoppingCart },
     { href: "/reports", label: "Reportes", icon: LineChart },
+    { href: "/settings", label: "Categorias/Proveedores", icon: BookCheck },
+    { href: "/products", label: "Productos", icon: Tags },
   ];
 
   const handleCashClosureSuccess = () => {
@@ -115,6 +119,8 @@ export const Header = () => {
             {pathname === "/" && "Dashboard"}
             {pathname === "/inventory" && "Inventario"}
             {pathname === "/sales" && "Punto de Venta"}
+            {pathname === "/products" && "Productos"}
+            {pathname === "/settings" && "Categorias/Proveedores"}
             {pathname === "/reports" && "Reportes"}
           </h1>
         </div>
