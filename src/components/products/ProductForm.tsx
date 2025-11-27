@@ -21,12 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { ImageUpload } from "./ImageUpload";
-import {
-  productService,
-  type Product,
-  type Category,
-  type Supplier,
-} from "@/services/productService";
+import { productService } from "@/services/productService";
+import type { Product, Category, Supplier } from "@/types/models";
 import { toast } from "sonner";
 import { getImageUrl } from "@/lib/imageUtils";
 
@@ -99,6 +95,7 @@ export function ProductForm({
           name: product.name,
           category_id: product.category_id,
           sale_price: product.sale_price,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           unit_of_measure: product.unit_of_measure as any,
           supplier_id: product.supplier_id || "",
           can_be_sold_by_weight: product.can_be_sold_by_weight,
@@ -147,6 +144,7 @@ export function ProductForm({
       onSuccess();
       onClose();
     } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       toast.error((error as any).message || "Error al guardar el producto");
     } finally {
       setIsLoading(false);
@@ -252,6 +250,7 @@ export function ProductForm({
               <Select
                 value={watch("unit_of_measure")}
                 onValueChange={(value) =>
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   setValue("unit_of_measure", value as any)
                 }
                 disabled={isLoading}

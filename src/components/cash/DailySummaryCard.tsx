@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Label } from "@/components/ui/label";
 import { Plus, Eye, EyeOff } from "lucide-react";
-import type { DailyCashFlow, Expense } from "@/services/expenseService";
+import type { DailyCashFlow, Expense } from "@/types/models";
 import {
   expenseCategories,
   paymentMethodLabels,

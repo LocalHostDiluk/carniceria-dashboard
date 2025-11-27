@@ -12,7 +12,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { productService, type Category } from "@/services/productService";
+import { productService } from "@/services/productService";
+import type { Category } from "@/types/models";
 
 interface ProductFiltersProps {
   onFiltersChange: (filters: ProductFilters) => void;

@@ -11,7 +11,7 @@ import {
   User,
   Clock,
 } from "lucide-react";
-import type { SaleRecord } from "@/services/reportsService";
+import type { SaleRecord } from "@/types/reports";
 
 interface SalesHistoryTableProps {
   sales: SaleRecord[];

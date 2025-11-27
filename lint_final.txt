@@ -1,0 +1,15 @@
+
+> carniceria-dashboard@0.1.0 lint
+> eslint
+
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\app\sales\page.tsx
+  34:3   warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any')
+  36:29  error    Unexpected any. Specify a different type                                                               @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\cash\CashClosureModal.tsx
+  69:6  warning  React Hook useEffect has a missing dependency: 'loadDailyData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+Ô£û 3 problems (1 error, 2 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

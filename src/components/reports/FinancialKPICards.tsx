@@ -9,7 +9,7 @@ import {
   ShoppingCart,
   Receipt,
 } from "lucide-react";
-import type { FinancialSummary } from "@/services/reportsService";
+import type { FinancialSummary } from "@/types/reports";
 
 interface FinancialKPICardsProps {
   summary: FinancialSummary | null;

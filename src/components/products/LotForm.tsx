@@ -63,7 +63,7 @@ export function LotForm({ product, isOpen, onClose, onSuccess }: LotFormProps) {
       try {
         const data = await lotService.getPurchases();
         setPurchases(data);
-      } catch (error) {
+      } catch {
         toast.error("Error al cargar compras");
       }
     };
@@ -101,7 +101,8 @@ export function LotForm({ product, isOpen, onClose, onSuccess }: LotFormProps) {
       toast.success("Lote creado exitosamente");
       onSuccess();
       onClose();
-      
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Error al crear el lote");
     } finally {

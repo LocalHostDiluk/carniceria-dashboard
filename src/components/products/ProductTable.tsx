@@ -20,7 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { productService, type Product } from "@/services/productService";
+import { productService } from "@/services/productService";
+import type { Product } from "@/types/models";
 import { toast } from "sonner";
 import { getImageFallback, getImageUrl } from "@/lib/imageUtils";
 import { Package2, Plus } from "lucide-react";
@@ -61,8 +62,10 @@ export function ProductTable({
           : "Producto activado exitosamente"
       );
       onRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Error al cambiar estado del producto");
+    } catch (error) {
+      toast.error(
+        (error as Error).message || "Error al cambiar estado del producto"
+      );
     } finally {
       setActionLoading(null);
     }
@@ -81,8 +84,10 @@ export function ProductTable({
           : "Producto marcado como destacado"
       );
       onRefresh();
-    } catch (error: any) {
-      toast.error(error.message || "Error al cambiar estado destacado");
+    } catch (error) {
+      toast.error(
+        (error as Error).message || "Error al cambiar estado destacado"
+      );
     } finally {
       setActionLoading(null);
     }

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertTriangle, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import type { DailyCashFlow } from "@/services/expenseService";
+import type { DailyCashFlow } from "@/types/models";
 
 interface CashCalculationCardProps {
   dailyFlow: DailyCashFlow;

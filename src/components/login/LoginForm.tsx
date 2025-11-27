@@ -45,7 +45,7 @@ export function LoginForm() {
       await login(email, password);
       toast.success("¡Bienvenido!");
       setLoginSuccess(true);
-    } catch (error) {
+    } catch {
       toast.error("Credenciales incorrectas");
       setIsLoading(false);
     }

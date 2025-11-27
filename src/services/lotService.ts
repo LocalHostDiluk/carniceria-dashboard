@@ -1,51 +1,10 @@
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
-
-import type { Product } from "./productService";
-
-// Tipos para lotes
-export interface InventoryLot {
-  lot_id: string;
-  stock_quantity: number;
-  initial_quantity: number;
-  purchase_price: number;
-  expiration_date: string | null;
-  purchase_id: string;
-  supplier_name: string | null;
-  purchase_date: string;
-  created_at: string;
-  days_until_expiry: number | null;
-  percentage_remaining: number;
-  status:
-    | "normal"
-    | "stock_bajo"
-    | "próximo_a_caducar"
-    | "caducado"
-    | "agotado";
-}
-
-export interface CreateLotData {
-  product_id: string;
-  stock_quantity: number;
-  purchase_price: number;
-  purchase_id: string;
-  expiration_date?: string;
-}
-
-export interface InventoryAdjustment {
-  adjustment_id: string;
-  lot_id: string;
-  product_name: string;
-  quantity: number;
-  reason: "merma" | "caducado" | "daño" | "ajuste manual";
-  user: string;
-  adjustment_date: string;
-  stock_before: number;
-  stock_after: number;
-}
-
-// ✅ EXPORTAR: Re-exportar Product para que ProductLotsModal pueda importarlo
-export type { Product };
+import type {
+  InventoryLot,
+  CreateLotData,
+  InventoryAdjustment,
+} from "@/types/models";
 
 export class LotService {
   // Crear nuevo lote
@@ -88,27 +47,26 @@ export class LotService {
 
   // Ajustar inventario
   async adjustLot(
-  lotId: string,
-  quantity: number,
-  reason: string
-): Promise<void> {
-  try {
-    const roundedQuantity = Number(quantity.toFixed(2));
+    lotId: string,
+    quantity: number,
+    reason: string
+  ): Promise<void> {
+    try {
+      // const roundedQuantity = Number(quantity.toFixed(2));
 
-    const { error } = await supabase.rpc("adjust_inventory_lot", {
-      p_lot_id: lotId,
-      p_quantity: quantity,   
-      p_reason: reason,
-    });
+      const { error } = await supabase.rpc("adjust_inventory_lot", {
+        p_lot_id: lotId,
+        p_quantity: quantity,
+        p_reason: reason,
+      });
 
-    if (error) throw error;
-  } catch (error) {
-    const appError = ErrorHandler.fromSupabaseError(error);
-    console.error("Error adjusting lot:", appError);
-    throw appError;
+      if (error) throw error;
+    } catch (error) {
+      const appError = ErrorHandler.fromSupabaseError(error);
+      console.error("Error adjusting lot:", appError);
+      throw appError;
+    }
   }
-}
-
 
   // Obtener historial de ajustes
   async getAdjustments(
@@ -156,6 +114,7 @@ export class LotService {
 
       if (error) throw error;
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (data || []).map((p: any) => ({
         purchase_id: p.purchase_id,
         supplier_name: p.suppliers?.name || "Sin proveedor",

@@ -12,7 +12,7 @@ import type {
   SaleRecord,
   ExpenseRecord,
   FinancialSummary,
-} from "@/services/reportsService";
+} from "@/types/reports";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 

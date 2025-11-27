@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { ProductWithCategory } from "@/services/productService";
+import type { ProductWithCategory } from "@/types/models";
 
 interface WeightInputDialogProps {
   isOpen: boolean;

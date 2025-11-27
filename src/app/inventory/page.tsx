@@ -5,11 +5,8 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InventoryKPIs } from "@/components/inventory/InventoryKPIs";
-import { 
-  inventoryService, 
-  type InventoryOverview,
-  type InventoryAlert 
-} from "@/services/inventoryService";
+import { inventoryService } from "@/services/inventoryService";
+import type { InventoryOverview } from "@/types/models";
 import {
   Table,
   TableBody,
@@ -25,22 +22,16 @@ export default function InventoryPage() {
   // ✅ TODOS LOS HOOKS PRIMERO
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [overview, setOverview] = useState<InventoryOverview[]>([]);
-  const [alerts, setAlerts] = useState<InventoryAlert[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadInventoryData = async () => {
       try {
         setIsLoading(true);
-        const [overviewData, alertsData] = await Promise.all([
-          inventoryService.getInventoryOverview(),
-          inventoryService.getInventoryAlerts(5, 7)
-        ]);
-        
+        const overviewData = await inventoryService.getInventoryOverview();
         setOverview(overviewData);
-        setAlerts(alertsData);
       } catch (error) {
-        console.error('Error loading inventory data:', error);
+        console.error("Error loading inventory data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -55,7 +46,7 @@ export default function InventoryPage() {
   if (authLoading) {
     return <div className="p-4">Verificando sesión...</div>;
   }
-  
+
   if (!isAuthenticated) {
     return null;
   }
@@ -63,9 +54,9 @@ export default function InventoryPage() {
   const kpis = inventoryService.getInventoryKPIs(overview);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
-      style: 'currency',
-      currency: 'MXN'
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
     }).format(amount);
   };
 
@@ -83,11 +74,13 @@ export default function InventoryPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div className="flex items-center">
-          <h1 className="text-lg font-semibold md:text-2xl">Resumen de Inventario</h1>
+          <h1 className="text-lg font-semibold md:text-2xl">
+            Resumen de Inventario
+          </h1>
         </div>
 
         {/* KPIs del inventario */}
-        <InventoryKPIs 
+        <InventoryKPIs
           totalProducts={kpis.totalProducts}
           lowStockProducts={kpis.lowStockProducts}
           nearExpiryProducts={kpis.nearExpiryProducts}
@@ -104,8 +97,11 @@ export default function InventoryPage() {
           <CardContent>
             {isLoading ? (
               <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div
+                    key={i}
+                    className="h-12 bg-muted rounded animate-pulse"
+                  />
                 ))}
               </div>
             ) : (
@@ -116,7 +112,9 @@ export default function InventoryPage() {
                     <TableHead>Categoría</TableHead>
                     <TableHead className="text-right">Stock Total</TableHead>
                     <TableHead className="text-right">Precio</TableHead>
-                    <TableHead className="text-center">% Stock Restante</TableHead>
+                    <TableHead className="text-center">
+                      % Stock Restante
+                    </TableHead>
                     <TableHead>Estado</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -139,8 +137,8 @@ export default function InventoryPage() {
                       </TableCell>
                       <TableCell className="text-center">
                         <div className="space-y-1">
-                          <Progress 
-                            value={product.avg_percentage_remaining} 
+                          <Progress
+                            value={product.avg_percentage_remaining}
                             className="h-2"
                           />
                           <span className="text-sm text-muted-foreground">
@@ -148,9 +146,7 @@ export default function InventoryPage() {
                           </span>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {getStockStatus(product)}
-                      </TableCell>
+                      <TableCell>{getStockStatus(product)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

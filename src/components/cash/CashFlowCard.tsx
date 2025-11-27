@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import type { DailyCashFlow } from "@/services/expenseService";
+import type { DailyCashFlow } from "@/types/models";
 
 interface CashFlowCardProps {
   dailyFlow: DailyCashFlow;

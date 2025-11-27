@@ -11,15 +11,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
-import {
-  getActiveProducts,
-  type ProductWithCategory,
-} from "@/services/productService";
+import { getActiveProducts } from "@/services/productService";
+import type { ProductWithCategory } from "@/types/models";
 import { type CartItem, TicketItem } from "../../components/sales/TicketItem";
 import { UnifiedQuantityModal } from "@/components/sales/UnifiedQuantityModal";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { toast } from "sonner";
-import { salesService, type SaleProcessRequest } from "@/services/salesService";
+import { salesService } from "@/services/salesService";
+import type { SaleProcessRequest } from "@/types/api";
 import { SaleConfirmationModal } from "@/components/sales/SaleConfirmationModal";
 import { getImageUrl, getImageFallback } from "@/lib/imageUtils";
 
@@ -32,6 +31,7 @@ const PosProductCard = ({
   onSelect: () => void;
 }) => {
   const imgSrc =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getImageUrl((product as any).image_url) || getImageFallback(product.name);
   return (
     <Card
@@ -40,6 +40,7 @@ const PosProductCard = ({
     >
       <CardHeader className="p-2">
         <div className="aspect-square w-full rounded-md mb-2 overflow-hidden bg-muted">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imgSrc}
             alt={product.name}
@@ -222,7 +223,7 @@ export default function SalesPage() {
       <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
           <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
               placeholder="Buscar productos..."

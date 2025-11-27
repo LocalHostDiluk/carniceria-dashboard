@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { toast } from "sonner";
 import { reportsService } from "@/services/reportsService";
-import type { SaleRecord, ExpenseRecord } from "@/services/reportsService";
+import type { SaleRecord, ExpenseRecord } from "@/types/reports";
 
 interface ExportButtonProps {
   data: SaleRecord[] | ExpenseRecord[] | null;

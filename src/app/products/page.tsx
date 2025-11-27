@@ -7,10 +7,10 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ProductTable } from "@/components/products/ProductTable";
 import { ProductForm } from "@/components/products/ProductForm";
-import { productService, type Product } from "@/services/productService";
+import { productService } from "@/services/productService";
+import type { Product, InventoryLot } from "@/types/models";
 import { toast } from "sonner";
 import { ProductFilters } from "@/components/products/ProductFilters";
-import { InventoryLot } from "@/services/lotService";
 import { AdjustmentForm } from "@/components/products/AdjustmentForm";
 import { LotForm } from "@/components/products/LotForm";
 import { ProductLotsModal } from "@/components/products/ProductLotsModal";
@@ -38,7 +38,6 @@ export default function ProductsPage() {
     useState<InventoryLot | null>(null);
   const [lotsRefreshKey, setLotsRefreshKey] = useState(0);
 
-
   // Estado del formulario
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -49,6 +48,7 @@ export default function ProductsPage() {
       setIsLoading(true);
       const data = await productService.getProducts();
       setProducts(data);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message || "Error al cargar productos");
     } finally {
@@ -156,25 +156,24 @@ export default function ProductsPage() {
   };
 
   const handleLotFormSuccess = () => {
-  // Actualiza totales de producto (cards y tabla principal)
-  loadProducts();
+    // Actualiza totales de producto (cards y tabla principal)
+    loadProducts();
 
-  // Si el modal de lotes está abierto, recarga los lotes internos
-  if (isLotsModalOpen) {
-    setLotsRefreshKey((prev) => prev + 1);
-  }
-};
+    // Si el modal de lotes está abierto, recarga los lotes internos
+    if (isLotsModalOpen) {
+      setLotsRefreshKey((prev) => prev + 1);
+    }
+  };
 
-const handleAdjustmentSuccess = () => {
-  // Actualiza totales de producto
-  loadProducts();
+  const handleAdjustmentSuccess = () => {
+    // Actualiza totales de producto
+    loadProducts();
 
-  // Recarga la tabla de lotes del modal
-  if (isLotsModalOpen) {
-    setLotsRefreshKey((prev) => prev + 1);
-  }
-};
-
+    // Recarga la tabla de lotes del modal
+    if (isLotsModalOpen) {
+      setLotsRefreshKey((prev) => prev + 1);
+    }
+  };
 
   // Loading states
   if (authLoading) {
@@ -265,8 +264,7 @@ const handleAdjustmentSuccess = () => {
           onClose={() => setIsLotsModalOpen(false)}
           onCreateLot={handleCreateLot}
           onAdjustLot={handleAdjustLot}
-          refreshKey={lotsRefreshKey}   
-
+          refreshKey={lotsRefreshKey}
         />
 
         {/* Formulario nuevo lote */}

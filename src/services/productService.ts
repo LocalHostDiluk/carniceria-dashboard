@@ -1,85 +1,38 @@
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
 import { storageService } from "./storageService";
-
-// Tipos para productos
-export interface Product {
-  product_id: string;
-  name: string;
-  category_id: string;
-  category_name?: string;
-  sale_price: number;
-  unit_of_measure: string;
-  supplier_id?: string;
-  supplier_name?: string;
-  can_be_sold_by_weight: boolean;
-  is_active: boolean;
-  is_featured: boolean;
-  image_url?: string;
-  created_at: string;
-  updated_at: string;
-  total_stock?: number;
-  active_lots?: number;
-}
-
-export interface CreateProductData {
-  name: string;
-  category_id: string;
-  sale_price: number;
-  unit_of_measure: "kg" | "pieza" | "rueda" | "bote" | "paquete";
-  supplier_id?: string;
-  can_be_sold_by_weight?: boolean;
-  is_featured?: boolean;
-  image_file?: File;
-}
-
-export interface UpdateProductData extends Partial<CreateProductData> {
-  is_active?: boolean;
-  remove_image?: boolean;
-}
-
-export interface Category {
-  category_id: string;
-  name: string;
-}
-
-export interface Supplier {
-  supplier_id: string;
-  name: string;
-  contact_info?: string;
-}
-
-export interface ProductWithCategory {
-  product_id: string;
-  name: string;
-  category_id: string;
-  category_name: string | null;
-  sale_price: number;
-  unit_of_measure: "kg" | "pieza" | "rueda" | "bote" | "paquete";
-  can_be_sold_by_weight: boolean;
-  is_active: boolean;
-  is_featured: boolean;
-}
+import type {
+  Product,
+  CreateProductData,
+  UpdateProductData,
+  Category,
+  Supplier,
+  ProductWithCategory,
+} from "@/types/models";
 
 export async function getActiveProducts(): Promise<ProductWithCategory[]> {
   try {
     const { data, error } = await supabase.rpc("get_products_list");
     if (error) throw error;
 
-    return (data || [])
-      .filter((p: any) => p.is_active)
-      .map((p: any) => ({
-        product_id: p.product_id,
-        name: p.name,
-        category_id: p.category_id,
-        category_name: p.category_name ?? null,
-        sale_price: Number(p.sale_price),
-        unit_of_measure: p.unit_of_measure,
-        can_be_sold_by_weight: !!p.can_be_sold_by_weight,
-        is_active: !!p.is_active,
-        is_featured: !!p.is_featured,
-        image_url: p.image_url || null, // ✅ AGREGAR ESTA LÍNEA
-      }));
+    return (
+      (data || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((p: any) => p.is_active)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((p: any) => ({
+          product_id: p.product_id,
+          name: p.name,
+          category_id: p.category_id,
+          category_name: p.category_name ?? null,
+          sale_price: Number(p.sale_price),
+          unit_of_measure: p.unit_of_measure,
+          can_be_sold_by_weight: !!p.can_be_sold_by_weight,
+          is_active: !!p.is_active,
+          is_featured: !!p.is_featured,
+          image_url: p.image_url || null, // ✅ AGREGAR ESTA LÍNEA
+        }))
+    );
   } catch (error) {
     const appError = ErrorHandler.fromSupabaseError(error);
     console.error("Error getting active products (rpc):", appError);

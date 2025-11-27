@@ -1,25 +1,10 @@
 import { supabase } from "@/lib/supabaseClient";
 import type { CartItem } from "@/components/sales/TicketItem";
-
-export interface SaleProcessRequest {
-  items: CartItem[];
-  paymentMethod: "efectivo" | "tarjeta" | "transferencia";
-  total: number;
-}
-
-export interface SaleProcessResult {
-  success: boolean;
-  saleId?: string;
-  message: string;
-  errors?: string[];
-}
-
-export interface SaleValidationError {
-  productId: string;
-  productName: string;
-  error: string;
-  availableStock?: number;
-}
+import type {
+  SaleProcessRequest,
+  SaleProcessResult,
+  SaleValidationError,
+} from "@/types/api";
 
 class SalesService {
   // Procesar una venta completa

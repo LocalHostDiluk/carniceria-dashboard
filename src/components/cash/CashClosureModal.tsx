@@ -22,11 +22,8 @@ import { DailySummaryCard } from "./DailySummaryCard";
 import { CashFlowCard } from "./CashFlowCard";
 import { CashCalculationCard } from "./CashCalculationCard";
 
-import type {
-  CashClosureRequest,
-  CashClosureResult,
-} from "@/services/cashService";
-import type { DailyCashFlow, Expense } from "@/services/expenseService";
+import type { CashClosureRequest, CashClosureResult } from "@/types/api";
+import type { DailyCashFlow, Expense } from "@/types/models";
 
 interface CashClosureModalProps {
   open: boolean;
@@ -66,6 +63,7 @@ export function CashClosureModal({
       loadDailyData();
       resetForm();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const loadDailyData = async () => {

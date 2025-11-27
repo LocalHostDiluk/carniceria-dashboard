@@ -1,13 +1,7 @@
 // src/services/dashboardService.ts
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
-
-export interface DashboardKpis {
-  total_sales_today: number;
-  transaction_count_today: number;
-  average_ticket_today: number;
-  low_stock_products_count: number;
-}
+import type { DashboardKpis, DailySale } from "@/types/api";
 
 export const fetchDashboardKpis = async (): Promise<DashboardKpis> => {
   // 'rpc' es la forma de llamar a una función de base de datos en Supabase
@@ -21,11 +15,6 @@ export const fetchDashboardKpis = async (): Promise<DashboardKpis> => {
   return data[0];
 };
 
-export interface DailySale {
-  sale_day: string;
-  total: number;
-}
-
 export const fetchDailySales = async (): Promise<DailySale[]> => {
   const { data, error } = await supabase.rpc("get_daily_sales_last_7_days");
 
@@ -34,4 +23,3 @@ export const fetchDailySales = async (): Promise<DailySale[]> => {
   }
   return data;
 };
-

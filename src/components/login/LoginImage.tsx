@@ -5,6 +5,7 @@
 const LoginImage = () => {
   return (
     <div className="hidden bg-muted lg:block">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src="/placeholder.svg" // Placeholder para evitar errores de Next.js
         alt="Imagen de fondo de un corte de carne"

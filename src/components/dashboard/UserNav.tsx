@@ -16,16 +16,17 @@ import { useRouter } from "next/navigation";
 
 export const UserNav = () => {
   const router = useRouter();
-    const { profile, logout } = useUser();
+  const { profile, logout } = useUser();
 
   const handleLogout = async () => {
     try {
       await logout();
       toast.success("Has cerrado sesión exitosamente.");
       router.push("/login");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      toast.error("Error al cerrar sesión", { 
-        description: error.message 
+      toast.error("Error al cerrar sesión", {
+        description: error.message,
       });
     }
   };

@@ -1,0 +1,37 @@
+
+> carniceria-dashboard@0.1.0 lint
+> eslint
+
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\app\products\page.tsx
+  52:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\app\sales\page.tsx
+  35:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\cash\CashClosureModal.tsx
+  69:6  warning  React Hook useEffect has a missing dependency: 'loadDailyData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\dashboard\UserNav.tsx
+  26:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\login\LoginForm.tsx
+  48:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\products\AdjustmentForm.tsx
+  147:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\products\LotForm.tsx
+   66:16  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  105:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\components\products\ProductForm.tsx
+  102:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  255:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\sebas\Desktop\carniceria-dashboard\src\types\supabase.ts
+  1:0  error  Parsing error: File appears to be binary
+
+Ô£û 12 problems (9 errors, 3 warnings)
+

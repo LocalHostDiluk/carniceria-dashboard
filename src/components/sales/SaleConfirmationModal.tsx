@@ -47,7 +47,7 @@ export function SaleConfirmationModal({
       setIsProcessing(true);
       await onConfirmSale(paymentMethod);
       // El modal se cierra desde el componente padre después del éxito
-    } catch (error) {
+    } catch {
       // El error se maneja en el componente padre
     } finally {
       setIsProcessing(false);
@@ -96,7 +96,11 @@ export function SaleConfirmationModal({
             <Label className="font-medium">Método de pago:</Label>
             <RadioGroup
               value={paymentMethod}
-              onValueChange={(value) => setPaymentMethod(value as any)}
+              onValueChange={(value) =>
+                setPaymentMethod(
+                  value as "efectivo" | "tarjeta" | "transferencia"
+                )
+              }
               className="space-y-2"
             >
               <div className="flex items-center space-x-2 p-2 rounded-lg border border-border hover:bg-muted/50 transition-colors">

@@ -1,51 +1,12 @@
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
-import { expenseService, type DailyCashFlow } from "./expenseService";
-
-export interface CashClosureRequest {
-  starting_cash: number;
-  ending_cash: number;
-  notes?: string;
-}
-
-export interface CashClosureResult {
-  success: boolean;
-  session_id?: string;
-  date: string;
-  cash_flow: {
-    starting_cash: number;
-    cash_in: number;
-    cash_out: number;
-    expected_ending: number;
-    actual_ending: number;
-    difference: number;
-  };
-  breakdown: {
-    sales_cash: number;
-    purchases_cash: number;
-    expenses_cash: number;
-  };
-  difference_type: "surplus" | "deficit" | "exact";
-  message: string;
-}
-
-export interface CashSession {
-  session_id: string;
-  user_id: string;
-  start_time: string;
-  end_time?: string | null;
-  starting_cash: number;
-  ending_cash?: number | null;
-  calculated_sales?: number | null;
-  difference?: number | null;
-  notes?: string | null;
-  session_date: string;
-  user_profiles:
-    | {
-        username: string;
-      }[]
-    | null;
-}
+import { expenseService } from "./expenseService";
+import type { DailyCashFlow } from "@/types/models";
+import type {
+  CashClosureRequest,
+  CashClosureResult,
+  CashSession,
+} from "@/types/api";
 
 class CashService {
   // 📊 OBTENER FLUJO DE CAJA DEL DÍA
@@ -129,7 +90,15 @@ class CashService {
 
       if (error) throw error;
 
-      return (data || []) as CashSession[];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sessions = (data || []).map((session: any) => ({
+        ...session,
+        user_profiles: Array.isArray(session.user_profiles)
+          ? session.user_profiles[0]
+          : session.user_profiles,
+      }));
+
+      return sessions as CashSession[];
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
       console.error("💥 Error getting cash sessions:", appError);

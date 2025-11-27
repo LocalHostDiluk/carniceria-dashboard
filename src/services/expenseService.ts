@@ -1,66 +1,12 @@
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
-
-export type ExpenseCategory =
-  | "combustible"
-  | "servicios"
-  | "mantenimiento"
-  | "compras_menores";
-
-export type PaymentMethod = "efectivo" | "tarjeta" | "transferencia";
-
-export interface ExpenseRequest {
-  amount: number;
-  description: string;
-  category: ExpenseCategory;
-  payment_method: PaymentMethod;
-  expense_date?: string;
-}
-
-export interface Expense {
-  expense_id: string;
-  amount: number;
-  description: string;
-  category: ExpenseCategory;
-  payment_method: PaymentMethod;
-  expense_date: string;
-  user_id: string;
-  created_at: string;
-  updated_at: string;
-  user_profiles?: {
-    username: string;
-  } | null; // ✅ CORREGIDO: objeto único, no array
-}
-
-export interface DailyCashFlow {
-  date: string;
-  sales: {
-    total: number;
-    cash: number;
-    card: number;
-    transfer: number;
-    count: number;
-  };
-  expenses: {
-    purchases: number;
-    operations: number;
-    total: number;
-  };
-  cash_flow: {
-    in: number;
-    out: number;
-    net: number;
-  };
-  closure: {
-    is_closed: boolean;
-    session_info?: {
-      starting_cash: number;
-      ending_cash: number;
-      difference: number;
-      closed_by: string;
-    };
-  };
-}
+import type {
+  ExpenseCategory,
+  PaymentMethod,
+  ExpenseRequest,
+  Expense,
+  DailyCashFlow,
+} from "@/types/models";
 
 class ExpenseService {
   // 💰 CREAR NUEVO GASTO - CORREGIDO
@@ -108,7 +54,7 @@ class ExpenseService {
       if (error) throw error;
       if (!data) throw new Error("No se pudo crear el gasto");
 
-      return data as Expense;
+      return data as unknown as Expense;
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
       console.error("Error creating expense:", appError);
@@ -144,7 +90,7 @@ class ExpenseService {
 
       if (error) throw error;
 
-      return (data || []) as Expense[];
+      return (data || []) as unknown as Expense[];
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
       console.error("Error getting daily expenses:", appError);
@@ -233,7 +179,7 @@ class ExpenseService {
       if (error) throw error;
       if (!data) throw new Error("Gasto no encontrado");
 
-      return data as Expense;
+      return data as unknown as Expense;
     } catch (error) {
       const appError = ErrorHandler.fromSupabaseError(error);
       console.error("Error updating expense:", appError);

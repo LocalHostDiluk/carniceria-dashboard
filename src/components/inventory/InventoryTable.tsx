@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import type { InventoryOverview } from "@/services/inventoryService";
+import type { InventoryOverview } from "@/types/models";
 import { Progress } from "../ui/progress";
 
 type SortField =
@@ -55,6 +55,9 @@ export function InventoryTable({
         bValue = bValue.toLowerCase();
       }
 
+      if (aValue === bValue) return 0;
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
       if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
       if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
       return 0;

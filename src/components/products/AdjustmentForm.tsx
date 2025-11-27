@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { TrendingDown, Minus, Plus } from "lucide-react";
-import { lotService, type InventoryLot } from "@/services/lotService";
+import { lotService } from "@/services/lotService";
+import type { InventoryLot } from "@/types/models";
 import { toast } from "sonner";
 
 interface AdjustmentFormProps {
@@ -99,7 +100,10 @@ export function AdjustmentForm({
     const roundedQty = Number(data.quantity.toFixed(2));
 
     // No reducir más del stock disponible
-    if (data.adjustment_type === "decrease" && roundedQty > lot.stock_quantity) {
+    if (
+      data.adjustment_type === "decrease" &&
+      roundedQty > lot.stock_quantity
+    ) {
       toast.error(
         `No puedes reducir más del stock disponible. Stock actual: ${lot.stock_quantity}`
       );
@@ -144,6 +148,7 @@ export function AdjustmentForm({
       toast.success("Ajuste de inventario registrado exitosamente");
       onSuccess();
       onClose();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error?.message || "Error al registrar el ajuste");
     } finally {

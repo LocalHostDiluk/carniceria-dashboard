@@ -2,7 +2,7 @@
 "use client";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { DailySale } from "@/services/dashboardService";
+import type { DailySale } from "@/types/api";
 
 interface SalesChartProps {
   data: DailySale[];

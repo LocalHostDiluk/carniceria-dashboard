@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Receipt, User, Clock } from "lucide-react";
-import type { ExpenseRecord } from "@/services/reportsService";
+import type { ExpenseRecord } from "@/types/reports";
 import {
   expenseCategories,
   paymentMethodLabels,

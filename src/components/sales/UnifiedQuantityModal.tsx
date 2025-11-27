@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Calculator, Package, Scale } from "lucide-react";
-import type { ProductWithCategory } from "@/services/productService";
+import type { ProductWithCategory } from "@/types/models";
 
 interface UnifiedQuantityModalProps {
   isOpen: boolean;

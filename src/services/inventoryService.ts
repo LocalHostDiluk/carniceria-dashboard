@@ -1,89 +1,14 @@
 import { supabase } from "@/lib/supabaseClient";
 import { ErrorHandler } from "@/lib/errorHandler";
-
-// ===== TIPOS EXISTENTES =====
-export interface InventoryOverview {
-  product_id: string;
-  product_name: string;
-  category_name: string;
-  sale_price: number;
-  unit_of_measure: string;
-  total_stock: number;
-  active_lots: number;
-  avg_percentage_remaining: number;
-  min_percentage_remaining: number;
-  has_low_stock: boolean;
-  has_near_expiry: boolean;
-}
-
-export interface InventoryAlert {
-  alert_type: "low_stock" | "near_expiry";
-  lot_id: string;
-  product_id: string;
-  product_name: string;
-  category_name: string;
-  stock_quantity: number;
-  expiration_date: string;
-  days_until_expiry: number;
-}
-
-// ===== NUEVOS TIPOS PARA CRUD =====
-export interface Product {
-  product_id: string;
-  name: string;
-  category_id: string;
-  category_name?: string;
-  sale_price: number;
-  unit_of_measure: "kg" | "pieza" | "rueda" | "bote" | "paquete";
-  supplier_id?: string;
-  supplier_name?: string;
-  can_be_sold_by_weight: boolean;
-  is_active: boolean;
-  is_featured: boolean;
-  image_url?: string;
-  created_at: string;
-  updated_at: string;
-  total_stock?: number;
-  active_lots?: number;
-}
-
-export interface CreateProductData {
-  name: string;
-  category_id: string;
-  sale_price: number;
-  unit_of_measure: "kg" | "pieza" | "rueda" | "bote" | "paquete";
-  supplier_id?: string;
-  can_be_sold_by_weight?: boolean;
-  is_featured?: boolean;
-  image_url?: string;
-}
-
-export interface UpdateProductData {
-  name?: string;
-  category_id?: string;
-  sale_price?: number;
-  unit_of_measure?: "kg" | "pieza" | "rueda" | "bote" | "paquete";
-  supplier_id?: string;
-  can_be_sold_by_weight?: boolean;
-  is_featured?: boolean;
-  is_active?: boolean;
-  image_url?: string;
-}
-
-export interface Category {
-  category_id: string;
-  name: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Supplier {
-  supplier_id: string;
-  name: string;
-  contact_info?: string;
-  created_at: string;
-  updated_at: string;
-}
+import type {
+  InventoryOverview,
+  InventoryAlert,
+  Product,
+  CreateProductData,
+  UpdateProductData,
+  Category,
+  Supplier,
+} from "@/types/models";
 
 export class InventoryService {
   // ===== FUNCIONES EXISTENTES =====
@@ -182,7 +107,7 @@ export class InventoryService {
     productData: UpdateProductData
   ): Promise<void> {
     try {
-      const { data, error } = await supabase.rpc("update_product", {
+      const { error } = await supabase.rpc("update_product", {
         p_product_id: productId,
         p_name: productData.name || null,
         p_category_id: productData.category_id || null,
@@ -209,7 +134,7 @@ export class InventoryService {
     isActive: boolean
   ): Promise<void> {
     try {
-      const { data, error } = await supabase.rpc("toggle_product_active", {
+      const { error } = await supabase.rpc("toggle_product_active", {
         p_product_id: productId,
         p_is_active: isActive,
       });
@@ -228,7 +153,7 @@ export class InventoryService {
     isFeatured: boolean
   ): Promise<void> {
     try {
-      const { data, error } = await supabase.rpc("toggle_product_featured", {
+      const { error } = await supabase.rpc("toggle_product_featured", {
         p_product_id: productId,
         p_is_featured: isFeatured,
       });

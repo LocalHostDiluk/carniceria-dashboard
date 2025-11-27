@@ -13,17 +13,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
-import { expenseService } from "@/services/expenseService";
+import {
+  expenseService,
+  expenseCategories,
+  paymentMethodLabels,
+} from "@/services/expenseService";
 import type {
   ExpenseRequest,
   ExpenseCategory,
   PaymentMethod,
-} from "@/services/expenseService";
+} from "@/types/models";
 import {
-  expenseCategories,
-  paymentMethodLabels,
-} from "@/services/expenseService";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface AddExpenseModalProps {
   open: boolean;
