@@ -1,35 +1,62 @@
-// src/app/page.tsx
 "use client";
+
+import { useEffect, useState } from "react";
+import useSWR from "swr";
+import { DollarSign, Package, CreditCard, AlertCircle } from "lucide-react";
+
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, Package, CreditCard, AlertCircle } from "lucide-react";
-import {
-  fetchDashboardKpis,
-  fetchDailySales,
-} from "@/services/dashboardService";
 import { KpiCardSkeleton } from "@/components/dashboard/KpiCardSkeleton";
-import { SalesChart } from "@/components/dashboard/SalesChart";
-import { ChartSkeleton } from "@/components/dashboard/ChartSkeleton";
+
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import useSWR from "swr";
+import { fetchDashboardKpis } from "@/services/dashboardService";
+import { reportsService } from "@/services/reportsService";
+import { ErrorHandler } from "@/lib/errorHandler";
+import { SalesTrendChart } from "@/components/sales/SalesTrendChart";
+import { CategoryDistributionChart } from "@/components/sales/CategoryDistributionChart";
 
 export default function HomePage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
 
-  // Use SWR for fetching KPIs
+  // Estados para gráficas
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [categoryData, setCategoryData] = useState<any[]>([]);
+  const [areChartsLoading, setAreChartsLoading] = useState(true);
+
+  // Cargar datos de las gráficas al montar
+  useEffect(() => {
+    const loadCharts = async () => {
+      if (!isAuthenticated) return;
+      try {
+        setAreChartsLoading(true);
+
+        // Cargar ambas gráficas en paralelo
+        const [trend, categories] = await Promise.all([
+          reportsService.getDailySalesChart(30), // Últimos 30 días
+          reportsService.getSalesByCategoryChart({
+            start_date: new Date(
+              new Date().setDate(new Date().getDate() - 30)
+            ).toISOString(),
+            end_date: new Date().toISOString(),
+          }),
+        ]);
+
+        setTrendData(trend);
+        setCategoryData(categories);
+      } catch (error) {
+        ErrorHandler.handle(error, "Cargar gráficas del dashboard");
+      } finally {
+        setAreChartsLoading(false);
+      }
+    };
+
+    loadCharts();
+  }, [isAuthenticated]);
+
+  // Use SWR for fetching KPIs (mantenemos esto igual porque funciona bien)
   const { data: kpis, isLoading: kpisLoading } = useSWR(
     isAuthenticated ? "dashboard-kpis" : null,
     fetchDashboardKpis,
-    {
-      revalidateOnFocus: true, // Revalidate when window gets focus
-      dedupingInterval: 5000, // Dedupe requests within 5 seconds
-    }
-  );
-
-  // Use SWR for fetching sales data
-  const { data: salesData, isLoading: salesLoading } = useSWR(
-    isAuthenticated ? "dashboard-sales" : null,
-    fetchDailySales,
     {
       revalidateOnFocus: true,
       dedupingInterval: 5000,
@@ -41,12 +68,9 @@ export default function HomePage() {
   }
 
   if (!isAuthenticated) {
-    return null; // Redirecting
+    return null;
   }
 
-  const isLoading = kpisLoading || salesLoading;
-
-  // ✅ Formatters
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -56,12 +80,13 @@ export default function HomePage() {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="flex items-center space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-        {isLoading && !kpis ? (
+      {/* 1. SECCIÓN DE KPIs */}
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4 mt-4">
+        {kpisLoading && !kpis ? (
           <>
             <KpiCardSkeleton />
             <KpiCardSkeleton />
@@ -81,6 +106,9 @@ export default function HomePage() {
                 <div className="text-2xl font-bold">
                   {formatCurrency(kpis?.total_sales_today || 0)}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Ingresos brutos del día
+                </p>
               </CardContent>
             </Card>
 
@@ -95,6 +123,9 @@ export default function HomePage() {
                 <div className="text-2xl font-bold">
                   +{kpis?.transaction_count_today || 0}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Ventas realizadas hoy
+                </p>
               </CardContent>
             </Card>
 
@@ -109,6 +140,9 @@ export default function HomePage() {
                 <div className="text-2xl font-bold">
                   {formatCurrency(kpis?.average_ticket_today || 0)}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Promedio por venta
+                </p>
               </CardContent>
             </Card>
 
@@ -121,20 +155,31 @@ export default function HomePage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {kpis?.low_stock_products_count || 0} productos
+                  {kpis?.low_stock_products_count || 0}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Productos requieren atención
+                </p>
               </CardContent>
             </Card>
           </>
         )}
       </div>
 
-      <div className="grid gap-4 md:gap-8 lg:grid-cols-1 mt-8">
-        {isLoading && !salesData ? (
-          <ChartSkeleton />
-        ) : (
-          <SalesChart data={salesData || []} />
-        )}
+      {/* 2. SECCIÓN DE GRÁFICAS AVANZADAS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+        {/* Gráfica de Tendencia (Ocupa 2 columnas) */}
+        <div className="lg:col-span-2">
+          <SalesTrendChart data={trendData} isLoading={areChartsLoading} />
+        </div>
+
+        {/* Gráfica de Categorías (Ocupa 1 columna) */}
+        <div className="lg:col-span-1">
+          <CategoryDistributionChart
+            data={categoryData}
+            isLoading={areChartsLoading}
+          />
+        </div>
       </div>
     </DashboardLayout>
   );

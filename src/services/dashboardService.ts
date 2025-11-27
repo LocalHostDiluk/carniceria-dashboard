@@ -14,12 +14,3 @@ export const fetchDashboardKpis = async (): Promise<DashboardKpis> => {
   // La función devuelve un array, tomamos el primer (y único) resultado
   return data[0];
 };
-
-export const fetchDailySales = async (): Promise<DailySale[]> => {
-  const { data, error } = await supabase.rpc("get_daily_sales_last_7_days");
-
-  if (error) {
-    throw ErrorHandler.fromSupabaseError(error);
-  }
-  return data;
-};

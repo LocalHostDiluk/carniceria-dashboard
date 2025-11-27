@@ -120,6 +120,7 @@ export interface InventoryOverview {
   min_percentage_remaining: number;
   has_low_stock: boolean;
   has_near_expiry: boolean;
+  category_id: string;
 }
 
 export interface InventoryAlert {

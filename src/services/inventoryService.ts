@@ -10,36 +10,121 @@ import type {
   Supplier,
 } from "@/types/models";
 
+export interface InventoryFilters {
+  search?: string;
+  status?: "all" | "low_stock" | "near_expiry" | "ok";
+  categoryId?: string;
+}
+
 export class InventoryService {
-  // ===== FUNCIONES EXISTENTES =====
-  async getInventoryOverview(): Promise<InventoryOverview[]> {
-    const { data, error } = await supabase.rpc("get_inventory_overview");
+  // 📋 OBTENER RESUMEN DE INVENTARIO CON FILTROS Y PAGINACIÓN
+  async getInventoryOverview(page = 1, limit = 20, filters?: InventoryFilters) {
+    try {
+      // 1. Obtener todos los datos brutos
+      const { data, error } = await supabase.rpc("get_inventory_overview");
 
-    if (error) {
-      console.error("Error fetching inventory overview:", error);
-      throw new Error("Error al cargar resumen de inventario");
+      if (error) throw error;
+
+      let filteredData = (data || []) as InventoryOverview[];
+
+      // 2. Aplicar filtros en memoria
+      if (filters) {
+        // Filtro de Búsqueda
+        if (filters.search) {
+          const term = filters.search.toLowerCase();
+          filteredData = filteredData.filter(
+            (p) =>
+              p.product_name.toLowerCase().includes(term) ||
+              p.category_name?.toLowerCase().includes(term)
+          );
+        }
+
+        // Filtro de Categoría
+        if (filters.categoryId && filters.categoryId !== "all") {
+          filteredData = filteredData.filter(
+            (p) => p.category_id === filters.categoryId
+          );
+        }
+
+        // Filtro de Estado
+        if (filters.status && filters.status !== "all") {
+          switch (filters.status) {
+            case "low_stock":
+              filteredData = filteredData.filter((p) => p.has_low_stock);
+              break;
+            case "near_expiry":
+              filteredData = filteredData.filter((p) => p.has_near_expiry);
+              break;
+            case "ok":
+              filteredData = filteredData.filter(
+                (p) => !p.has_low_stock && !p.has_near_expiry
+              );
+              break;
+          }
+        }
+      }
+
+      // 3. Ordenamiento Inteligente
+      if (!filters?.status || filters.status === "all") {
+        filteredData.sort((a, b) => {
+          // Primero por caducar
+          if (a.has_near_expiry !== b.has_near_expiry) {
+            return a.has_near_expiry ? -1 : 1;
+          }
+          // Luego stock bajo
+          if (a.has_low_stock !== b.has_low_stock) {
+            return a.has_low_stock ? -1 : 1;
+          }
+          // Finalmente alfabético
+          return a.product_name.localeCompare(b.product_name);
+        });
+      } else {
+        filteredData.sort((a, b) =>
+          a.product_name.localeCompare(b.product_name)
+        );
+      }
+
+      // 4. Paginación Manual
+      const total = filteredData.length;
+      const totalPages = Math.ceil(total / limit);
+      const startIndex = (page - 1) * limit;
+      const endIndex = startIndex + limit;
+      const paginatedData = filteredData.slice(startIndex, endIndex);
+
+      return {
+        data: paginatedData,
+        total,
+        page,
+        limit,
+        totalPages,
+      };
+    } catch (error) {
+      ErrorHandler.handle(error, "Obtener resumen de inventario");
+      return { data: [], total: 0, page: 1, limit, totalPages: 0 };
     }
-
-    return data || [];
   }
 
+  // 🔔 OBTENER ALERTAS
   async getInventoryAlerts(
     lowStockThreshold: number = 5,
     daysToExpiry: number = 7
   ): Promise<InventoryAlert[]> {
-    const { data, error } = await supabase.rpc("get_inventory_alerts", {
-      low_stock_threshold: lowStockThreshold,
-      days_to_expiry: daysToExpiry,
-    });
+    try {
+      const { data, error } = await supabase.rpc("get_inventory_alerts", {
+        low_stock_threshold: lowStockThreshold,
+        days_to_expiry: daysToExpiry,
+      });
 
-    if (error) {
-      console.error("Error fetching inventory alerts:", error);
-      throw new Error("Error al cargar alertas de inventario");
+      if (error) throw error;
+
+      return data || [];
+    } catch (error) {
+      ErrorHandler.handle(error, "Obtener alertas de inventario");
+      return [];
     }
-
-    return data || [];
   }
 
+  // 📊 CALCULAR KPIs
   getInventoryKPIs(overview: InventoryOverview[]) {
     const totalProducts = overview.length;
     const lowStockProducts = overview.filter((p) => p.has_low_stock).length;
@@ -60,7 +145,7 @@ export class InventoryService {
     };
   }
 
-  // ===== NUEVAS FUNCIONES CRUD =====
+  // ===== FUNCIONES CRUD =====
 
   // 📋 OBTENER LISTA COMPLETA DE PRODUCTOS
   async getProductsList(): Promise<Product[]> {
@@ -71,9 +156,8 @@ export class InventoryService {
 
       return data || [];
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting products list:", appError);
-      throw new Error("Error al cargar lista de productos");
+      ErrorHandler.handle(error, "Obtener lista de productos");
+      return [];
     }
   }
 
@@ -95,9 +179,7 @@ export class InventoryService {
 
       return data.product_id;
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error creating product:", appError);
-      throw new Error("Error al crear producto");
+      throw ErrorHandler.handle(error, "Crear producto");
     }
   }
 
@@ -122,9 +204,7 @@ export class InventoryService {
 
       if (error) throw error;
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error updating product:", appError);
-      throw new Error("Error al actualizar producto");
+      throw ErrorHandler.handle(error, "Actualizar producto");
     }
   }
 
@@ -141,9 +221,7 @@ export class InventoryService {
 
       if (error) throw error;
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error toggling product active:", appError);
-      throw new Error("Error al cambiar estado del producto");
+      throw ErrorHandler.handle(error, "Cambiar estado del producto");
     }
   }
 
@@ -160,9 +238,7 @@ export class InventoryService {
 
       if (error) throw error;
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error toggling product featured:", appError);
-      throw new Error("Error al cambiar estado destacado del producto");
+      throw ErrorHandler.handle(error, "Cambiar estado destacado");
     }
   }
 
@@ -178,9 +254,8 @@ export class InventoryService {
 
       return data || [];
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting categories:", appError);
-      throw new Error("Error al cargar categorías");
+      ErrorHandler.handle(error, "Obtener categorías");
+      return [];
     }
   }
 
@@ -196,9 +271,8 @@ export class InventoryService {
 
       return data || [];
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting suppliers:", appError);
-      throw new Error("Error al cargar proveedores");
+      ErrorHandler.handle(error, "Obtener proveedores");
+      return [];
     }
   }
 }

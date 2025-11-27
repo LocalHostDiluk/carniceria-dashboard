@@ -28,7 +28,7 @@ import { useUser } from "@/hooks/useUser";
 
 export const Header = () => {
   const pathname = usePathname();
-  const { profile} = useUser();
+  const { profile } = useUser();
 
   const [showCashModal, setShowCashModal] = useState(false);
 
@@ -39,6 +39,7 @@ export const Header = () => {
     { href: "/reports", label: "Reportes", icon: LineChart },
     { href: "/settings", label: "Categorias/Proveedores", icon: BookCheck },
     { href: "/products", label: "Productos", icon: Tags },
+    { href: "/purchases", label: "Compras", icon: ShoppingCart },
   ];
 
   const handleCashClosureSuccess = () => {
@@ -122,6 +123,7 @@ export const Header = () => {
             {pathname === "/products" && "Productos"}
             {pathname === "/settings" && "Categorias/Proveedores"}
             {pathname === "/reports" && "Reportes"}
+            {pathname === "/purchases" && "Compras"}
           </h1>
         </div>
 

@@ -1,3 +1,5 @@
+import { toast } from "sonner"; // ✅ AGREGAR
+
 // Tipos para errores de Supabase
 interface SupabaseError {
   code?: string;
@@ -20,6 +22,7 @@ export enum ErrorType {
   AUTHENTICATION = "AUTHENTICATION",
   VALIDATION = "VALIDATION",
   DATABASE = "DATABASE",
+  PERMISSION = "PERMISSION", // ✅ NUEVO
   UNKNOWN = "UNKNOWN",
 }
 
@@ -64,9 +67,8 @@ export class ErrorHandler {
     return error;
   }
 
-  // ✅ SIN any - usando union types específicos
   static fromSupabaseError(error: UnknownError): AppError {
-    // Type guards para diferentes tipos de error
+    // Type guards
     const isSupabaseError = (err: unknown): err is SupabaseError => {
       return (
         typeof err === "object" &&
@@ -86,22 +88,13 @@ export class ErrorHandler {
       return err instanceof Error;
     };
 
-    // Manejo específico para errores de Supabase
+    // ✅ AMPLIAR MANEJO DE CÓDIGOS POSTGRESQL
     if (isSupabaseError(error)) {
-      if (error.code === "PGRST116") {
-        return this.createError(
-          ErrorType.DATABASE,
-          "No se encontraron registros",
-          error.code,
-          error,
-          false
-        );
-      }
-
+      // Códigos de integridad
       if (error.code === "23505") {
         return this.createError(
           ErrorType.VALIDATION,
-          "Ya existe un registro con estos datos",
+          "Ya existe un registro con este nombre o identificador",
           error.code,
           error,
           false
@@ -111,13 +104,56 @@ export class ErrorHandler {
       if (error.code === "23503") {
         return this.createError(
           ErrorType.DATABASE,
-          "Error de referencia en la base de datos",
+          "No se puede eliminar porque tiene registros relacionados",
           error.code,
           error,
           false
         );
       }
 
+      if (error.code === "23514") {
+        return this.createError(
+          ErrorType.VALIDATION,
+          "Los datos no cumplen con las reglas de validación",
+          error.code,
+          error,
+          false
+        );
+      }
+
+      // ✅ NUEVO: Códigos de permisos
+      if (error.code === "42501" || error.code === "42P01") {
+        return this.createError(
+          ErrorType.PERMISSION,
+          "No tienes permisos para realizar esta acción",
+          error.code,
+          error,
+          false
+        );
+      }
+
+      // Códigos de datos
+      if (error.code === "PGRST116") {
+        return this.createError(
+          ErrorType.DATABASE,
+          "No se encontraron los datos solicitados",
+          error.code,
+          error,
+          false
+        );
+      }
+
+      if (error.code === "22P02") {
+        return this.createError(
+          ErrorType.VALIDATION,
+          "Formato de datos inválido",
+          error.code,
+          error,
+          false
+        );
+      }
+
+      // Autenticación
       if (
         error.message?.includes("JWT") ||
         error.message?.includes("Invalid Refresh Token") ||
@@ -169,7 +205,7 @@ export class ErrorHandler {
       );
     }
 
-    // Fallback para errores completamente desconocidos
+    // Fallback
     return this.createError(
       ErrorType.UNKNOWN,
       "Error desconocido",
@@ -189,24 +225,40 @@ export class ErrorHandler {
         "📝 Los datos ingresados no son válidos. Revisa la información.",
       [ErrorType.DATABASE]:
         "💾 Error en la base de datos. Contacta al administrador.",
+      // ✅ NUEVO
+      [ErrorType.PERMISSION]:
+        "🔒 No tienes permisos suficientes para realizar esta acción.",
       [ErrorType.UNKNOWN]:
         "❓ Ha ocurrido un error inesperado. Vuelve a intentar.",
     };
 
     return error.message || messages[error.type];
   }
-}
 
-// ✅ Hook también sin any
-export const useErrorHandler = () => {
-  const handleError = (error: UnknownError, context?: string) => {
-    const appError = ErrorHandler.fromSupabaseError(error);
+  // ✅ NUEVO: Método para mostrar toast automáticamente
+  static handle(error: UnknownError, context?: string): AppError {
+    const appError = this.fromSupabaseError(error);
 
     if (context) {
       console.log(`📍 Error Context: ${context}`);
     }
 
+    // Mostrar toast automáticamente
+    const friendlyMessage = this.getUserFriendlyMessage(appError);
+
+    toast.error(friendlyMessage, {
+      description: appError.code ? `Código: ${appError.code}` : undefined,
+      duration: 5000,
+    });
+
     return appError;
+  }
+}
+
+// Hook mejorado
+export const useErrorHandler = () => {
+  const handleError = (error: UnknownError, context?: string) => {
+    return ErrorHandler.handle(error, context);
   };
 
   return { handleError };

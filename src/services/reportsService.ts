@@ -21,8 +21,7 @@ class ReportsService {
 
       return data || [];
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting sales history:", appError);
+      ErrorHandler.handle(error, "Obtener historial de ventas");
       return [];
     }
   }
@@ -39,8 +38,7 @@ class ReportsService {
 
       return data || [];
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting expenses history:", appError);
+      ErrorHandler.handle(error, "Obtener historial de gastos");
       return [];
     }
   }
@@ -57,8 +55,7 @@ class ReportsService {
 
       return data || [];
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting purchases history:", appError);
+      ErrorHandler.handle(error, "Obtener historial de compras");
       return [];
     }
   }
@@ -77,9 +74,86 @@ class ReportsService {
 
       return data as FinancialSummary;
     } catch (error) {
-      const appError = ErrorHandler.fromSupabaseError(error);
-      console.error("Error getting financial summary:", appError);
+      ErrorHandler.handle(error, "Obtener resumen financiero");
       return null;
+    }
+  }
+
+  // 📈 NUEVO: Obtener ventas diarias para gráfica (últimos 30 días)
+  async getDailySalesChart(days = 30) {
+    try {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - days);
+
+      const { data, error } = await supabase
+        .from("sales")
+        .select("sale_date, total_amount")
+        .gte("sale_date", startDate.toISOString())
+        .lte("sale_date", endDate.toISOString())
+        .order("sale_date", { ascending: true });
+
+      if (error) throw error;
+
+      // Agrupar por día (Formato local MX)
+      const grouped = (data || []).reduce((acc: any, curr) => {
+        const date = new Date(curr.sale_date).toLocaleDateString("es-MX", {
+          month: "short",
+          day: "numeric",
+        });
+        acc[date] = (acc[date] || 0) + curr.total_amount;
+        return acc;
+      }, {});
+
+      // Convertir a array para Recharts
+      return Object.entries(grouped).map(([date, total]) => ({
+        date,
+        total,
+      }));
+    } catch (error) {
+      ErrorHandler.handle(error, "Obtener gráfica de tendencia");
+      return [];
+    }
+  }
+
+  // 🥧 NUEVO: Obtener ventas por categoría (Pie Chart)
+  async getSalesByCategoryChart(range: DateRange) {
+    try {
+      // Nota: Ajustamos para usar el rango de strings que manejas (YYYY-MM-DD)
+      const startISO = new Date(range.start_date).toISOString();
+      const endISO = new Date(range.end_date).toISOString();
+
+      const { data, error } = await supabase
+        .from("sale_details")
+        .select(
+          `
+          price_at_sale,
+          quantity_sold,
+          products!inner (
+            categories!inner ( name )
+          )
+        `
+        )
+        .gte("created_at", startISO)
+        .lte("created_at", endISO);
+
+      if (error) throw error;
+
+      // Agrupar por categoría
+      const grouped = (data || []).reduce((acc: any, curr: any) => {
+        const category = curr.products?.categories?.name || "Sin Categoría";
+        const amount = curr.price_at_sale * curr.quantity_sold;
+        acc[category] = (acc[category] || 0) + amount;
+        return acc;
+      }, {});
+
+      // Formatear para Recharts y ordenar
+      return Object.entries(grouped)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a: any, b: any) => b.value - a.value);
+    } catch (error) {
+      ErrorHandler.handle(error, "Obtener gráfica de categorías");
+      return [];
     }
   }
 
@@ -90,17 +164,14 @@ class ReportsService {
       throw new Error("No hay datos para exportar");
     }
 
-    // Obtener headers del primer objeto
     const headers = Object.keys(data[0]);
 
-    // Crear contenido CSV
     const csvContent = [
       headers.join(","),
       ...data.map((row) =>
         headers
           .map((header) => {
             const value = row[header];
-            // Escapar comillas y envolver en comillas si contiene comas
             if (
               typeof value === "string" &&
               (value.includes(",") || value.includes('"'))
@@ -113,7 +184,6 @@ class ReportsService {
       ),
     ].join("\n");
 
-    // Crear y descargar archivo
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
 

@@ -17,6 +17,7 @@ import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // ✅ IMPORTAR TABS
 import { ShoppingBag, Receipt } from "lucide-react"; // ✅ IMPORTAR ICONOS
+import { ErrorHandler } from "@/lib/errorHandler";
 
 export default function ReportsPage() {
   // Estados principales
@@ -53,7 +54,7 @@ export default function ReportsPage() {
       setSalesHistory(sales);
       setExpensesHistory(expenses);
     } catch (error) {
-      console.error("Error loading reports:", error);
+      ErrorHandler.handle(error, "Cargar reportes");
     } finally {
       setIsLoading(false);
     }

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DataPagination } from "@/components/ui/data-pagination"; // ✅ AGREGAR
+import { DataPagination } from "@/components/ui/data-pagination";
 import { CategoryTable } from "@/components/categories/CategoryTable";
 import {
   CategoryForm,
@@ -21,6 +21,7 @@ import {
 import { categoryService, type Category } from "@/services/categoryService";
 import { supplierService, type Supplier } from "@/services/supplierService";
 import { toast } from "sonner";
+import { ErrorHandler } from "@/lib/errorHandler"; // ✅ IMPORTAR
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +48,6 @@ export default function SettingsPage() {
     null
   );
 
-  // ✅ PAGINACIÓN CATEGORÍAS
   const [categoriesPage, setCategoriesPage] = useState(1);
   const [categoriesPageSize, setCategoriesPageSize] = useState(20);
   const [categoriesTotalItems, setCategoriesTotalItems] = useState(0);
@@ -65,13 +65,11 @@ export default function SettingsPage() {
     null
   );
 
-  // ✅ PAGINACIÓN PROVEEDORES
   const [suppliersPage, setSuppliersPage] = useState(1);
   const [suppliersPageSize, setSuppliersPageSize] = useState(20);
   const [suppliersTotalItems, setSuppliersTotalItems] = useState(0);
   const [suppliersTotalPages, setSuppliersTotalPages] = useState(0);
 
-  // Estado general
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState("categories");
 
@@ -86,16 +84,13 @@ export default function SettingsPage() {
       setCategories(result.data);
       setCategoriesTotalItems(result.total);
       setCategoriesTotalPages(result.totalPages);
-    } catch (error: any) {
-      toast.error("Error al cargar categorías", {
-        description: error.message,
-      });
+    } catch (error) {
+      ErrorHandler.handle(error, "Cargar categorías"); // ✅ CAMBIO
     } finally {
       setIsCategoriesLoading(false);
     }
   };
 
-  // ✅ RECARGAR CATEGORÍAS AL CAMBIAR PÁGINA
   useEffect(() => {
     if (isAuthenticated) {
       loadCategories();
@@ -129,13 +124,11 @@ export default function SettingsPage() {
 
       setIsCategoryFormOpen(false);
       loadCategories();
-    } catch (error: any) {
-      toast.error(
-        selectedCategory
-          ? "Error al actualizar categoría"
-          : "Error al crear categoría",
-        { description: error.message }
-      );
+    } catch (error) {
+      ErrorHandler.handle(
+        error,
+        selectedCategory ? "Actualizar categoría" : "Crear categoría"
+      ); // ✅ CAMBIO
     } finally {
       setIsCategoryFormLoading(false);
     }
@@ -156,7 +149,7 @@ export default function SettingsPage() {
       );
 
       if (inUse) {
-        toast.error("No se puede eliminar", {
+        toast.warning("No se puede eliminar", {
           description: "Esta categoría tiene productos asociados",
         });
         return;
@@ -165,10 +158,8 @@ export default function SettingsPage() {
       await categoryService.deleteCategory(categoryToDelete.category_id);
       toast.success("Categoría eliminada exitosamente");
       loadCategories();
-    } catch (error: any) {
-      toast.error("Error al eliminar categoría", {
-        description: error.message,
-      });
+    } catch (error) {
+      ErrorHandler.handle(error, "Eliminar categoría"); // ✅ CAMBIO
     } finally {
       setIsDeleting(false);
       setCategoryToDelete(null);
@@ -186,16 +177,13 @@ export default function SettingsPage() {
       setSuppliers(result.data);
       setSuppliersTotalItems(result.total);
       setSuppliersTotalPages(result.totalPages);
-    } catch (error: any) {
-      toast.error("Error al cargar proveedores", {
-        description: error.message,
-      });
+    } catch (error) {
+      ErrorHandler.handle(error, "Cargar proveedores"); // ✅ CAMBIO
     } finally {
       setIsSuppliersLoading(false);
     }
   };
 
-  // ✅ RECARGAR PROVEEDORES AL CAMBIAR PÁGINA
   useEffect(() => {
     if (isAuthenticated) {
       loadSuppliers();
@@ -229,13 +217,11 @@ export default function SettingsPage() {
 
       setIsSupplierFormOpen(false);
       loadSuppliers();
-    } catch (error: any) {
-      toast.error(
-        selectedSupplier
-          ? "Error al actualizar proveedor"
-          : "Error al crear proveedor",
-        { description: error.message }
-      );
+    } catch (error) {
+      ErrorHandler.handle(
+        error,
+        selectedSupplier ? "Actualizar proveedor" : "Crear proveedor"
+      ); // ✅ CAMBIO
     } finally {
       setIsSupplierFormLoading(false);
     }
@@ -256,7 +242,7 @@ export default function SettingsPage() {
       );
 
       if (inUse) {
-        toast.error("No se puede eliminar", {
+        toast.warning("No se puede eliminar", {
           description: "Este proveedor tiene compras asociadas",
         });
         return;
@@ -265,10 +251,8 @@ export default function SettingsPage() {
       await supplierService.deleteSupplier(supplierToDelete.supplier_id);
       toast.success("Proveedor eliminado exitosamente");
       loadSuppliers();
-    } catch (error: any) {
-      toast.error("Error al eliminar proveedor", {
-        description: error.message,
-      });
+    } catch (error) {
+      ErrorHandler.handle(error, "Eliminar proveedor"); // ✅ CAMBIO
     } finally {
       setIsDeleting(false);
       setSupplierToDelete(null);
@@ -300,7 +284,6 @@ export default function SettingsPage() {
             <TabsTrigger value="suppliers">Proveedores</TabsTrigger>
           </TabsList>
 
-          {/* TAB DE CATEGORÍAS */}
           <TabsContent value="categories" className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -318,7 +301,6 @@ export default function SettingsPage() {
                   onDelete={handleDeleteCategory}
                 />
 
-                {/* ✅ PAGINACIÓN CATEGORÍAS */}
                 {!isCategoriesLoading && categoriesTotalPages > 0 && (
                   <DataPagination
                     currentPage={categoriesPage}
@@ -336,7 +318,6 @@ export default function SettingsPage() {
             </Card>
           </TabsContent>
 
-          {/* TAB DE PROVEEDORES */}
           <TabsContent value="suppliers" className="space-y-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
@@ -354,7 +335,6 @@ export default function SettingsPage() {
                   onDelete={handleDeleteSupplier}
                 />
 
-                {/* ✅ PAGINACIÓN PROVEEDORES */}
                 {!isSuppliersLoading && suppliersTotalPages > 0 && (
                   <DataPagination
                     currentPage={suppliersPage}
@@ -373,7 +353,6 @@ export default function SettingsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* MODALES */}
         <CategoryForm
           category={selectedCategory}
           isOpen={isCategoryFormOpen}
@@ -390,7 +369,6 @@ export default function SettingsPage() {
           isLoading={isSupplierFormLoading}
         />
 
-        {/* DIALOGS DE CONFIRMACIÓN */}
         <AlertDialog
           open={!!categoryToDelete}
           onOpenChange={() => setCategoryToDelete(null)}

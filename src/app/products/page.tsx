@@ -5,10 +5,10 @@ import { Plus } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { DashboardLayout } from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card"; // ✅ AGREGAR
+import { Card, CardContent } from "@/components/ui/card";
 import { ProductTable } from "@/components/products/ProductTable";
 import { ProductForm } from "@/components/products/ProductForm";
-import { DataPagination } from "@/components/ui/data-pagination"; // ✅ AGREGAR
+import { DataPagination } from "@/components/ui/data-pagination";
 import { productService } from "@/services/productService";
 import type { Product, InventoryLot } from "@/types/models";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ import { ProductFilters } from "@/components/products/ProductFilters";
 import { AdjustmentForm } from "@/components/products/AdjustmentForm";
 import { LotForm } from "@/components/products/LotForm";
 import { ProductLotsModal } from "@/components/products/ProductLotsModal";
+import { ErrorHandler } from "@/lib/errorHandler";
 
 export default function ProductsPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
@@ -55,8 +56,8 @@ export default function ProductsPage() {
       setIsLoading(true);
       const data = await productService.getProducts();
       setProducts(data);
-    } catch (error: any) {
-      toast.error(error.message || "Error al cargar productos");
+    } catch (error) {
+      ErrorHandler.handle(error, "Cargar productos");
     } finally {
       setIsLoading(false);
     }
