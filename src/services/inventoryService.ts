@@ -14,10 +14,12 @@ export interface InventoryFilters {
   search?: string;
   status?: "all" | "low_stock" | "near_expiry" | "ok";
   categoryId?: string;
+  sortBy?: string; // ✅ NUEVO
+  sortDirection?: "asc" | "desc"; // ✅ NUEVO
 }
 
 export class InventoryService {
-  // 📋 OBTENER RESUMEN DE INVENTARIO CON FILTROS Y PAGINACIÓN
+  // 📋 OBTENER RESUMEN DE INVENTARIO CON FILTROS, PAGINACIÓN Y ORDENAMIENTO
   async getInventoryOverview(page = 1, limit = 20, filters?: InventoryFilters) {
     try {
       // 1. Obtener todos los datos brutos
@@ -64,8 +66,26 @@ export class InventoryService {
         }
       }
 
-      // 3. Ordenamiento Inteligente
-      if (!filters?.status || filters.status === "all") {
+      // 3. Lógica de Ordenamiento (Sorting) ✅ ACTUALIZADO
+      if (filters?.sortBy) {
+        const { sortBy, sortDirection } = filters;
+        const dir = sortDirection === "asc" ? 1 : -1;
+
+        filteredData.sort((a: any, b: any) => {
+          const valA = a[sortBy];
+          const valB = b[sortBy];
+
+          // Manejo de strings (case insensitive)
+          if (typeof valA === "string" && typeof valB === "string") {
+            return valA.localeCompare(valB) * dir;
+          }
+          // Manejo de números/booleanos
+          if (valA < valB) return -1 * dir;
+          if (valA > valB) return 1 * dir;
+          return 0;
+        });
+      } else if (!filters?.status || filters.status === "all") {
+        // Ordenamiento por defecto inteligente (si no hay sort explícito)
         filteredData.sort((a, b) => {
           // Primero por caducar
           if (a.has_near_expiry !== b.has_near_expiry) {
@@ -79,6 +99,7 @@ export class InventoryService {
           return a.product_name.localeCompare(b.product_name);
         });
       } else {
+        // Fallback simple
         filteredData.sort((a, b) =>
           a.product_name.localeCompare(b.product_name)
         );

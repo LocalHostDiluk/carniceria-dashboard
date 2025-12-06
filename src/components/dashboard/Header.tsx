@@ -8,6 +8,7 @@ import {
   DollarSign,
   BookCheck,
   Tags,
+  Receipt,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ import Link from "next/link";
 import { UserNav } from "./UserNav";
 import { CashClosureModal } from "@/components/cash/CashClosureModal";
 import { useUser } from "@/hooks/useUser";
+import { NotificationsMenu } from "./NotificationsMenu";
 
 export const Header = () => {
   const pathname = usePathname();
@@ -35,7 +37,7 @@ export const Header = () => {
   const navLinks = [
     { href: "/", label: "Dashboard", icon: Home },
     { href: "/inventory", label: "Inventario", icon: Package },
-    { href: "/sales", label: "Ventas", icon: ShoppingCart },
+    { href: "/sales", label: "Vender", icon: Receipt },
     { href: "/reports", label: "Reportes", icon: LineChart },
     { href: "/settings", label: "Categorias/Proveedores", icon: BookCheck },
     { href: "/products", label: "Productos", icon: Tags },
@@ -139,6 +141,7 @@ export const Header = () => {
           </Button>
         )}
 
+        <NotificationsMenu />
         <UserNav />
       </header>
 

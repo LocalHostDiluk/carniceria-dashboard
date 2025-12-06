@@ -21,6 +21,7 @@ import { salesService } from "@/services/salesService";
 import type { SaleProcessRequest } from "@/types/api";
 import { SaleConfirmationModal } from "@/components/sales/SaleConfirmationModal";
 import { getImageUrl, getImageFallback } from "@/lib/imageUtils";
+import { ProductGridSkeleton } from "@/components/dashboard/skeletons";
 
 // Un componente simple para la tarjeta de producto en el POS
 const PosProductCard = ({
@@ -235,7 +236,7 @@ export default function SalesPage() {
 
           <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
             {isLoading ? (
-              <p>Cargando productos...</p>
+              <ProductGridSkeleton />
             ) : (
               filteredProducts.map((p) => (
                 <PosProductCard

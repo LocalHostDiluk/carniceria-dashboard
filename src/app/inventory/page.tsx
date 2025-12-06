@@ -23,23 +23,51 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { InventoryOverview } from "@/types/models";
+import { SortableHeader } from "@/components/ui/sortable-header";
+import { exportService } from "@/services/exportService";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { FileSpreadsheet } from "lucide-react";
 
 export default function InventoryPage() {
   const { isAuthenticated, isLoading: authLoading } = useAuthGuard();
   const [overview, setOverview] = useState<InventoryOverview[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [filters, setFilters] = useState<InventoryFilters>({
+    status: "all",
+    search: "",
+    sortBy: "product_name", // Default
+    sortDirection: "asc",
+  });
+
+  const handleExportExcel = () => {
+    if (overview.length === 0) return;
+
+    // Formatear datos para que el Excel se vea bonito (renombrar columnas)
+    const dataToExport = overview.map((p) => ({
+      Producto: p.product_name,
+      Categoría: p.category_name || "N/A",
+      "Stock Actual": p.total_stock,
+      Unidad: p.unit_of_measure,
+      "Precio Venta": p.sale_price,
+      "Valor Total Stock": p.total_stock * p.sale_price, // Dato calculado extra útil
+      Estado: p.has_low_stock
+        ? "Bajo"
+        : p.has_near_expiry
+        ? "Por Caducar"
+        : "Normal",
+    }));
+
+    exportService.exportToExcel(dataToExport, "Inventario_Reporte");
+    toast.success("Reporte descargado");
+  };
+
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-
-  // ✅ NUEVO: Estado de Filtros
-  const [filters, setFilters] = useState<InventoryFilters>({
-    status: "all",
-    search: "",
-  });
 
   // Cargar datos
   const loadInventoryData = async () => {
@@ -72,6 +100,16 @@ export default function InventoryPage() {
   const handleFilterChange = (newFilters: InventoryFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Resetear a página 1 al filtrar
+  };
+
+  const handleSort = (column: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      sortBy: column,
+      sortDirection:
+        prev.sortBy === column && prev.sortDirection === "asc" ? "desc" : "asc",
+    }));
+    setCurrentPage(1); // Resetear página
   };
 
   if (authLoading) return <div className="p-4">Verificando sesión...</div>;
@@ -108,9 +146,19 @@ export default function InventoryPage() {
       <div className="space-y-6">
         <h1 className="text-3xl font-bold">Inventario</h1>
 
+        {/* ✅ BOTÓN DE EXPORTAR */}
+        <Button
+          variant="outline"
+          onClick={handleExportExcel}
+          disabled={isLoading || overview.length === 0}
+        >
+          <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
+          Exportar Excel
+        </Button>
+
         {/* KPIs Generales */}
         <InventoryKPIs
-          totalProducts={kpis.totalProducts} // Nota: Estos KPIs podrían necesitar ajuste si quieres que reflejen el filtro o el total global
+          totalProducts={kpis.totalProducts}
           lowStockProducts={kpis.lowStockProducts}
           nearExpiryProducts={kpis.nearExpiryProducts}
           totalLots={kpis.totalLots}
@@ -123,7 +171,6 @@ export default function InventoryPage() {
             <CardTitle>Productos</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* ✅ BARRA DE FILTROS */}
             <InventoryFiltersBar onFilterChange={handleFilterChange} />
 
             {isLoading ? (
@@ -141,10 +188,36 @@ export default function InventoryPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Producto</TableHead>
+                        <TableHead>
+                          <SortableHeader
+                            label="Producto"
+                            column="product_name"
+                            currentSort={filters.sortBy || ""}
+                            currentDirection={filters.sortDirection || "asc"}
+                            onSort={handleSort}
+                          />
+                        </TableHead>
                         <TableHead>Categoría</TableHead>
-                        <TableHead className="text-right">Stock</TableHead>
-                        <TableHead className="text-right">Precio</TableHead>
+                        <TableHead className="text-right">
+                          <SortableHeader
+                            label="Stock"
+                            column="total_stock"
+                            currentSort={filters.sortBy || ""}
+                            currentDirection={filters.sortDirection || "asc"}
+                            onSort={handleSort}
+                            className="ml-auto"
+                          />
+                        </TableHead>
+                        <TableHead className="text-right">
+                          <SortableHeader
+                            label="Precio"
+                            column="sale_price"
+                            currentSort={filters.sortBy || ""}
+                            currentDirection={filters.sortDirection || "asc"}
+                            onSort={handleSort}
+                            className="ml-auto"
+                          />
+                        </TableHead>
                         <TableHead className="text-center w-[200px]">
                           Disponibilidad
                         </TableHead>
@@ -186,7 +259,6 @@ export default function InventoryPage() {
                                 <Progress
                                   value={product.avg_percentage_remaining}
                                   className="h-2"
-                                  // Puedes agregar clases condicionales de color aquí si quieres
                                 />
                                 <p className="text-xs text-muted-foreground text-right">
                                   {Math.round(product.avg_percentage_remaining)}

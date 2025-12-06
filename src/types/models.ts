@@ -132,6 +132,7 @@ export interface InventoryAlert {
   stock_quantity: number;
   expiration_date: string;
   days_until_expiry: number;
+  current_value: number;
 }
 
 // ============================================

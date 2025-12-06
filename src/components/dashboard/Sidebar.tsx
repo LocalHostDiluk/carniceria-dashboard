@@ -9,14 +9,14 @@ import {
   ShoppingCart,
   LineChart,
   Tags,
-  Settings,
   BookCheck,
+  Receipt,
 } from "lucide-react";
 import Image from "next/image";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: Home },
-  { href: "/sales", label: "Ventas", icon: ShoppingCart },
+  { href: "/sales", label: "Vender", icon: Receipt },
   { href: "/inventory", label: "Inventario", icon: Package },
   { href: "/products", label: "Productos", icon: Tags },
   { href: "/settings", label: "Categorias/Proveedores", icon: BookCheck },

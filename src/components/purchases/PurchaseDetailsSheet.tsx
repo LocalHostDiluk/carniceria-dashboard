@@ -7,18 +7,20 @@ import {
   SheetTitle,
   SheetDescription,
 } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Calendar,
   User,
-  CreditCard,
   Receipt,
   Package,
   Clock,
   Store,
+  FileText,
 } from "lucide-react";
 import { type Purchase } from "@/services/purchaseService";
+import { exportService } from "@/services/exportService";
 
 interface PurchaseDetailItem {
   lot_id: string;
@@ -47,6 +49,13 @@ export function PurchaseDetailsSheet({
 }: PurchaseDetailsSheetProps) {
   if (!purchase) return null;
 
+  // FUNCIÓN DE DESCARGA
+  const handleDownloadPDF = () => {
+    if (purchase && details.length > 0) {
+      exportService.exportPurchaseTicket(purchase, details);
+    }
+  };
+
   const formatCurrency = (val: number) =>
     new Intl.NumberFormat("es-MX", {
       style: "currency",
@@ -64,7 +73,6 @@ export function PurchaseDetailsSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      {/* sm:max-w-xl hace el panel más ancho para que quepa bien la info */}
       <SheetContent className="w-full sm:max-w-xl flex flex-col p-0 gap-0">
         {/* HEADER FIJO */}
         <div className="p-6 border-b bg-muted/10">
@@ -82,17 +90,29 @@ export function PurchaseDetailsSheet({
                   </span>
                 </SheetDescription>
               </div>
-              <div className="text-right">
+
+              <div className="flex flex-col items-end gap-2">
                 <Badge
                   variant={
                     purchase.payment_method === "efectivo"
                       ? "default"
                       : "secondary"
                   }
-                  className="capitalize mb-1"
+                  className="capitalize"
                 >
                   {purchase.payment_method}
                 </Badge>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={handleDownloadPDF}
+                  disabled={isLoading}
+                >
+                  <FileText className="h-3 w-3 mr-1 text-red-600" />
+                  Descargar PDF
+                </Button>
               </div>
             </div>
 
@@ -105,9 +125,9 @@ export function PurchaseDetailsSheet({
           </SheetHeader>
         </div>
 
-        {/* CONTENIDO CON SCROLL NATURALEZA */}
+        {/* CONTENIDO CON SCROLL */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          {/* Sección de Información General */}
+          {/* INFO GENERAL */}
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-1">
               <span className="text-xs text-muted-foreground flex items-center gap-1.5">
@@ -143,7 +163,7 @@ export function PurchaseDetailsSheet({
 
           <Separator />
 
-          {/* Lista de Productos */}
+          {/* LISTA DE PRODUCTOS */}
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
               <Package className="h-4 w-4" />
